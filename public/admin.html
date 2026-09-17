@@ -1,0 +1,808 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>TEADEM - Panel</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+<style>
+:root{--bg:#09090b;--surface:#121215;--surface2:#1a1a1f;--border:#27272a;--text:#f4f4f5;--text2:#a1a1aa;--text3:#71717a;--brand:#6366f1;--brand2:#4f46e5;--brand-bg:rgba(99,102,241,0.12);--green:#10b981;--green-bg:rgba(16,185,129,0.12);--amber:#f59e0b;--amber-bg:rgba(245,158,11,0.12);--red:#ef4444;--red-bg:rgba(239,68,68,0.12);--blue:#3b82f6;--radius:10px;--radius-sm:6px;--shadow:0 4px 24px rgba(0,0,0,0.3);--sidebar-w:260px;--navbar-h:56px}
+[data-theme="light"]{--bg:#f8fafc;--surface:#fff;--surface2:#f1f5f9;--border:#e2e8f0;--text:#0f172a;--text2:#64748b;--text3:#94a3b8;--shadow:0 1px 3px rgba(0,0,0,.08)}
+*,::before,::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden}
+.login-page{display:flex;align-items:center;justify-content:center;min-height:100vh}
+.login-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:40px;width:100%;max-width:400px;box-shadow:var(--shadow)}
+.login-card h1{font-size:26px;text-align:center;margin-bottom:4px;font-weight:800;letter-spacing:-1px}
+.login-card .sub{text-align:center;color:var(--text2);font-size:13px;margin-bottom:24px}
+.login-card input{width:100%;padding:10px 14px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--surface2);color:var(--text);font-size:14px;outline:none;margin-bottom:12px}
+.login-card input:focus{border-color:var(--brand)}
+.login-card button{width:100%;padding:10px;background:var(--brand);color:#fff;border:none;border-radius:var(--radius-sm);font-weight:600;cursor:pointer;font-size:14px}
+.login-card button:hover{background:var(--brand2)}
+.login-card .err{color:var(--red);font-size:13px;margin-top:8px;text-align:center}
+.app{display:none}
+.sidebar{position:fixed;top:0;left:0;width:var(--sidebar-w);height:100vh;background:var(--surface);border-right:1px solid var(--border);z-index:100;overflow-y:auto;transition:transform .2s}
+.side-logo{padding:18px 20px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border)}
+.side-logo .icon{width:34px;height:34px;background:var(--brand);border-radius:var(--radius-sm);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:15px}
+.side-logo .name{font-weight:700;font-size:15px}
+.side-nav{flex:1;padding:8px;display:flex;flex-direction:column;gap:1px}
+.nav-sec{padding:8px 12px 4px;font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--text3);font-weight:600;margin-top:6px}
+.nav-item{display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:var(--radius-sm);color:var(--text2);cursor:pointer;font-size:13px;font-weight:500;transition:all .15s}
+.nav-item:hover{background:var(--surface2);color:var(--text)}.nav-item.active{background:var(--brand-bg);color:var(--brand)}
+.nav-item i{font-size:17px;width:20px;text-align:center}
+.navbar{position:fixed;top:0;left:var(--sidebar-w);right:0;height:var(--navbar-h);background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 20px;z-index:90;gap:12px}
+.navbar .menu-btn{cursor:pointer;font-size:20px;color:var(--text2);padding:4px}.navbar .menu-btn:hover{color:var(--text)}
+.navbar .bread{font-size:12px;color:var(--text3)}.navbar .bread span{color:var(--text2)}
+.navbar-actions{display:flex;align-items:center;gap:10px;margin-left:auto}
+.navbar-actions .icon-btn{width:34px;height:34px;border-radius:50%;border:1px solid var(--border);background:var(--surface2);color:var(--text2);display:flex;align-items:center;justify-content:center;cursor:pointer}
+.navbar-actions .icon-btn:hover{background:var(--border)}
+.main{margin-left:var(--sidebar-w);margin-top:var(--navbar-h);padding:24px;min-height:calc(100vh - var(--navbar-h));transition:margin .2s}
+.page{display:none}.page.active{display:block}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:16px}
+.card h3{font-size:13px;color:var(--text2);margin-bottom:14px;text-transform:uppercase;letter-spacing:.5px}
+.stats{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:12px;margin-bottom:20px}
+.stat{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;display:flex;align-items:center;gap:12px;transition:all .15s}
+.stat:hover{border-color:var(--brand)}
+.stat i.si{font-size:22px;font-weight:700;width:42px;height:42px;border-radius:var(--radius-sm);display:flex;align-items:center;justify-content:center;font-style:normal}
+.stat i.p{background:var(--brand-bg);color:var(--brand)}.stat i.g{background:var(--green-bg);color:var(--green)}
+.stat i.a{background:var(--amber-bg);color:var(--amber)}.stat i.b{background:var(--blue-bg);color:var(--blue)}
+.stat .v{font-size:22px;font-weight:700;line-height:1.1}.stat .l{font-size:11px;color:var(--text2);letter-spacing:.5px;text-transform:uppercase}
+.tbl{border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;background:var(--surface)}
+.tbl-h{padding:14px 18px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;border-bottom:1px solid var(--border)}
+.tbl-h h3{font-size:13px;font-weight:600;color:var(--text2);margin:0;text-transform:uppercase;letter-spacing:.5px}
+.tbl-h input,.tbl-h select{padding:7px 10px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--surface2);color:var(--text);font-size:12px;outline:none}
+.tbl-h input:focus{border-color:var(--brand)}
+table{width:100%;border-collapse:collapse}
+th,td{padding:10px 14px;text-align:left;font-size:12px;border-bottom:1px solid var(--border)}
+th{font-weight:600;color:var(--text2);text-transform:uppercase;font-size:10px;letter-spacing:.5px;background:var(--surface2)}
+td{color:var(--text)}tr:hover td{background:var(--surface2)}
+.badge{padding:2px 10px;border-radius:10px;font-size:10px;font-weight:600;white-space:nowrap}
+.bg-p{background:var(--brand-bg);color:var(--brand)}.bg-g{background:var(--green-bg);color:var(--green)}
+.bg-a{background:var(--amber-bg);color:var(--amber)}.bg-r{background:var(--red-bg);color:var(--red)}
+.dot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:5px}
+.dot.g{background:var(--green)}.dot.r{background:var(--red)}
+.btn{padding:7px 14px;border-radius:var(--radius-sm);font-size:12px;font-weight:600;cursor:pointer;border:none;display:inline-flex;align-items:center;gap:5px;transition:all .15s}
+.btn-p{background:var(--brand);color:#fff}.btn-p:hover{background:var(--brand2)}
+.btn-o{border:1px solid var(--border);background:transparent;color:var(--text)}.btn-o:hover{border-color:var(--brand)}
+.btn-sm{padding:4px 10px;font-size:11px}.btn-d{background:var(--red);color:#fff}.btn-d:hover{opacity:.8}
+.fg{margin-bottom:14px}.fl{font-size:11px;color:var(--text2);display:block;margin-bottom:3px;font-weight:600;text-transform:uppercase}
+.fi,.fs{width:100%;padding:8px 12px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--surface2);color:var(--text);font-size:13px;outline:none}
+.fi:focus,.fs:focus{border-color:var(--brand)}.fr{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.mo{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:200;display:none;align-items:center;justify-content:center;padding:20px}
+.mo.open{display:flex}
+.md{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);width:100%;max-width:620px;max-height:85vh;overflow-y:auto;padding:24px;box-shadow:var(--shadow)}
+.md h3{font-size:16px;margin-bottom:18px}.md-btns{display:flex;gap:8px;justify-content:flex-end;margin-top:18px;padding-top:14px;border-top:1px solid var(--border)}
+.ld{text-align:center;padding:40px;color:var(--text3)}.ld i{animation:spin 1s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}
+.toast{position:fixed;bottom:24px;right:24px;z-index:300;padding:10px 18px;border-radius:var(--radius);font-size:13px;font-weight:600;color:#fff;opacity:0;transform:translateY(20px);transition:all .3s}
+.toast.show{opacity:1;transform:translateY(0)}.toast.ok{background:var(--green)}.toast.err{background:var(--red)}
+.ov{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:99}
+@media(max-width:768px){
+.sidebar{transform:translateX(-100%)}.sidebar.open{transform:translateX(0);box-shadow:var(--shadow)}
+.sidebar.open~.ov{display:block}.navbar{left:0}.main{margin-left:0}
+.stats{grid-template-columns:repeat(auto-fill,minmax(130px,1fr))}.fr{grid-template-columns:1fr}
+}
+.orgbox{padding:4px 2px}
+.orgnode{position:relative;padding:10px 14px;margin:6px 0 6px 6px;border-left:2px solid var(--border);border-radius:var(--radius-sm);background:var(--surface);border:1px solid var(--border);font-size:13px}
+.orgnode .badge{vertical-align:middle;margin-left:8px}
+.orgnode.top{background:var(--brand-bg);border-color:var(--brand);font-weight:700}
+.orgnode.lv1{font-weight:600;border-left-color:var(--brand);margin-left:16px}
+.orgnode.lv2{margin-left:32px}
+.orgnode.lv3{margin-left:48px}
+.orgnode.lv4{margin-left:64px;color:var(--text2)}
+.orgnode i{color:var(--brand);margin-right:6px}
+</style>
+</head>
+<body>
+
+<div class="login-page" id="lp">
+<div class="login-card">
+<h1>TEADEM</h1><div class="sub">Panel de Gestion</div>
+<input type="email" id="lemail" placeholder="Email" value="admin@teadem.com">
+<input type="password" id="lpass" placeholder="Password">
+<button onclick="doLogin()">Ingresar</button>
+<div class="err" id="lerr"></div>
+</div></div>
+
+<div class="app" id="app">
+<div class="ov" onclick="closeSB()"></div>
+<aside class="sidebar" id="sb">
+<div class="side-logo"><div class="icon">T</div><div class="name">TEADEM 251</div></div>
+<nav class="side-nav" id="sn">
+<div class="nav-item active" data-p="dashboard"><i class="bi bi-grid-1x2"></i>Dashboard</div>
+<div class="nav-sec">Organizacion</div>
+<div class="nav-item" data-p="centro"><i class="bi bi-diagram-3"></i>Vista Organizacional</div>
+<div class="nav-item" data-p="cabeceras"><i class="bi bi-diagram-2"></i>Cabeceras</div>
+<div class="nav-item" data-p="filiales"><i class="bi bi-house"></i>Filiales</div>
+<div class="nav-item" data-p="anexos"><i class="bi bi-houses"></i>Anexos</div>
+<div class="nav-sec">Gestion</div>
+<div class="nav-item" data-p="personas"><i class="bi bi-people"></i>Personas</div>
+<div class="nav-item" data-p="miembros"><i class="bi bi-person-check"></i>Miembros</div>
+<div class="nav-item" data-p="obreros"><i class="bi bi-person-workspace"></i>Obreros</div>
+<div class="nav-item" data-p="ministerios"><i class="bi bi-puzzle"></i>Ministerios</div>
+<div class="nav-item" data-p="resp-filial"><i class="bi bi-person-vcard"></i>Responsables Filial</div>
+<div class="nav-item" data-p="resp-anexo"><i class="bi bi-person-vcard-fill"></i>Responsables Anexo</div>
+<div class="nav-sec">Central</div>
+<div class="nav-item" data-p="reportes"><i class="bi bi-bar-chart"></i>Reportes</div>
+<div class="nav-item" data-href="/admin/credenciales"><i class="bi bi-card-checklist"></i>Credenciales</div>
+<div class="nav-sec">Sistema</div>
+<div class="nav-item" data-p="usuarios"><i class="bi bi-person-badge"></i>Usuarios</div>
+<div class="nav-item" data-p="roles"><i class="bi bi-key"></i>Roles</div>
+</nav></aside>
+
+<header class="navbar">
+<span class="menu-btn" onclick="toggleSB()"><i class="bi bi-list"></i></span>
+<div class="bread">TEADEM / <span id="bread">Dashboard</span></div>
+<div class="navbar-actions">
+<button class="icon-btn" onclick="toggleTheme()"><i class="bi bi-moon-stars-fill" id="ticon"></i></button>
+<button class="icon-btn" onclick="doLogout()"><i class="bi bi-box-arrow-right"></i></button>
+</div></header>
+
+<main class="main" id="mc">
+<div class="page active" id="pg-dashboard"><div class="stats" id="dashStats"><div class="ld"><i class="bi bi-arrow-repeat"></i> Cargando...</div></div></div>
+<div class="page" id="pg-centro"><div class="ld" id="ld-centro"><i class="bi bi-arrow-repeat"></i> Cargando...</div></div>
+<div class="page" id="pg-cabeceras"><div class="ld" id="ld-cabeceras"><i class="bi bi-arrow-repeat"></i> Cargando...</div></div>
+<div class="page" id="pg-filiales"><div class="ld" id="ld-filiales"><i class="bi bi-arrow-repeat"></i> Cargando...</div></div>
+<div class="page" id="pg-anexos"><div class="ld" id="ld-anexos"><i class="bi bi-arrow-repeat"></i> Cargando...</div></div>
+<div class="page" id="pg-personas"><div class="ld" id="ld-personas"><i class="bi bi-arrow-repeat"></i> Cargando...</div></div>
+<div class="page" id="pg-miembros"><div class="ld" id="ld-miembros"><i class="bi bi-arrow-repeat"></i> Cargando...</div></div>
+<div class="page" id="pg-obreros"><div class="ld" id="ld-obreros"><i class="bi bi-arrow-repeat"></i> Cargando...</div></div>
+<div class="page" id="pg-ministerios"><div class="ld" id="ld-ministerios"><i class="bi bi-arrow-repeat"></i> Cargando...</div></div>
+<div class="page" id="pg-resp-filial"><div class="ld" id="ld-resp-filial"><i class="bi bi-arrow-repeat"></i> Cargando...</div></div>
+<div class="page" id="pg-resp-anexo"><div class="ld" id="ld-resp-anexo"><i class="bi bi-arrow-repeat"></i> Cargando...</div></div>
+<div class="page" id="pg-reportes"><div class="ld" id="ld-reportes"><i class="bi bi-arrow-repeat"></i> Cargando...</div></div>
+<div class="page" id="pg-usuarios"><div class="ld" id="ld-usuarios"><i class="bi bi-arrow-repeat"></i> Cargando...</div></div>
+<div class="page" id="pg-roles"><div class="ld" id="ld-roles"><i class="bi bi-arrow-repeat"></i> Cargando...</div></div>
+</main></div>
+
+<div class="mo" id="modal">
+<div class="md">
+<h3 id="mTitle"></h3><div id="mBody"></div>
+<div class="md-btns" id="mFooter">
+<button class="btn btn-o" onclick="closeModal()">Cancelar</button>
+<button class="btn btn-p" id="mSave" onclick="saveModalAction()">Guardar</button>
+</div></div></div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+var TOKEN = "";
+var A = location.origin;
+
+function api(path, opt) {
+  opt = opt || {};
+  opt.headers = opt.headers || {};
+  if (TOKEN) opt.headers["Authorization"] = "Bearer " + TOKEN;
+  return fetch(A + path, opt).then(function(r) {
+    if (r.status === 401) { doLogout(); throw new Error("Sesion expirada"); }
+    if (r.status === 204) return null;
+    return r.json();
+  });
+}
+
+function $(id) { return document.getElementById(id); }
+
+function toast(msg, ok) {
+  var el = $("toast");
+  el.textContent = msg;
+  el.className = "toast " + (ok ? "ok" : "err") + " show";
+  setTimeout(function() { el.className = "toast"; }, 2500);
+}
+
+function doLogin() {
+  var e = $("lemail").value.trim();
+  var p = $("lpass").value.trim();
+  $("lerr").textContent = "Conectando...";
+  fetch(A + "/usuarios/login", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email: e, password: p })
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(d) {
+    if (d.token) {
+      TOKEN = d.token;
+      $("lp").style.display = "none";
+      $("app").style.display = "block";
+      goPage("dashboard");
+    } else {
+      $("lerr").textContent = d.error || "Error de autenticacion";
+    }
+  })
+  .catch(function(err) { $("lerr").textContent = err.message; });
+}
+
+function doLogout() {
+  TOKEN = "";
+  $("lp").style.display = "flex";
+  $("app").style.display = "none";
+}
+
+function toggleSB() { $("sb").classList.toggle("open"); }
+function closeSB() { $("sb").classList.remove("open"); }
+
+function toggleTheme() {
+  var h = document.documentElement;
+  var t = h.getAttribute("data-theme") === "dark" ? "light" : "dark";
+  h.setAttribute("data-theme", t);
+  $("ticon").className = "bi bi-" + (t === "dark" ? "moon-stars" : "sun") + "-fill";
+}
+
+$("sn").addEventListener("click", function(e) {
+  var it = e.target.closest(".nav-item");
+  if (!it) return;
+  if (it.dataset.href) { window.open(it.dataset.href, "_blank"); return; }
+  goPage(it.dataset.p);
+});
+
+function goPage(pg) {
+  document.querySelectorAll(".nav-item").forEach(function(el) { el.classList.remove("active"); });
+  var n = document.querySelector(".nav-item[data-p='" + pg + "']");
+  if (n) n.classList.add("active");
+  document.querySelectorAll(".page").forEach(function(el) { el.classList.remove("active"); });
+  var p = $("pg-" + pg);
+  if (p) p.classList.add("active");
+  $("bread").textContent = n ? n.textContent.trim() : pg;
+  if (window.innerWidth < 768) closeSB();
+
+  var L = {
+    dashboard: loadDashboard, centro: loadCentro, cabeceras: loadCabeceras, filiales: loadFiliales,
+    anexos: loadAnexos, personas: loadPersonas, miembros: loadMiembros,
+    obreros: loadObreros, ministerios: loadMinisterios,
+    "resp-filial": loadRespFilial, "resp-anexo": loadRespAnexo, reportes: loadReportes,
+    usuarios: loadUsuarios, roles: loadRoles
+  };
+  if (L[pg]) L[pg]();
+}
+
+function row(c) { return "<tr>" + c.map(function(s) { return "<td>" + s + "</td>"; }).join("") + "</tr>"; }
+function badge(t, c) { return "<span class='badge bg-" + c + "'>" + t + "</span>"; }
+
+function tblHead(title, count, type) {
+  return "<div class='tbl'><div class='tbl-h'><h3>" + title + " (" + count + ")</h3>" +
+    "<input type='text' placeholder='Buscar...' oninput='filterTbl(this)'>" +
+    "<button class='btn btn-p btn-sm' onclick='openForm(\"" + type + "\")'><i class='bi bi-plus-lg'></i> Nuevo</button></div>" +
+    "<div style='overflow-x:auto'><table><thead>";
+}
+function tblFoot() { return "</tbody></table></div></div>"; }
+
+function filterTbl(inp) {
+  var v = inp.value.toLowerCase();
+  var tbl = inp.closest(".tbl");
+  var rows = tbl.querySelectorAll("tbody tr");
+  rows.forEach(function(r) { r.style.display = r.textContent.toLowerCase().indexOf(v) >= 0 ? "" : "none"; });
+}
+
+function loadDashboard() {
+  $("dashStats").innerHTML = "<div class='ld'><i class='bi bi-arrow-repeat'></i> Cargando...</div>";
+  Promise.all([
+    api("/cabeceras"), api("/filiales"), api("/anexos"), api("/personas"),
+    api("/miembros"), api("/obreros"), api("/usuarios"), api("/ministerios")
+  ]).then(function(r) {
+    var nums = [0,1,2,3,4,5,6,7].map(function(i) { return r[i] && r[i].length ? r[i].length : 0; });
+    var lbs = ["Cabeceras","Filiales","Anexos","Personas","Miembros","Obreros","Usuarios","Ministerios"];
+    var cls = ["p","g","b","a","p","g","b","a"];
+    var h = "";
+    for (var i = 0; i < 8; i++) {
+      h += "<div class='stat'><i class='si " + cls[i] + "'>" + nums[i] + "</i><div><div class='v'>" + nums[i] + "</div><div class='l'>" + lbs[i] + "</div></div></div>";
+    }
+    $("dashStats").innerHTML = h;
+  }).catch(function(e) { $("dashStats").innerHTML = "<div class='ld'>Error: " + e.message + "</div>"; });
+}
+
+function loadCabeceras() { loadList("cabeceras", "Cabeceras", ["nombre","provincia_nombre"], ["Nombre","Provincia"], "id_cabecera", true); }
+function loadFiliales() {
+  var el = $("ld-filiales");
+  api("/filiales").then(function(r) {
+    if (!r || !r.length) { el.innerHTML = "<div class='ld'>Sin datos</div>"; return; }
+    var h = tblHead("Filiales", r.length, "filiales");
+    h += "<thead><tr><th>Nombre</th><th>Provincia</th><th>Localidad</th><th>Telefono</th><th>Estado</th><th></th></tr></thead><tbody>";
+    for (var i = 0; i < r.length; i++) {
+      var d = r[i];
+      var btnE = "<button class='btn btn-o btn-sm' onclick='openForm(\"filiales\"," + d.id_filial + ")'>Editar</button>";
+      var btnF = "<button class='btn btn-o btn-sm' onclick='openFoto(\"filiales\"," + d.id_filial + ")'><i class='bi bi-image'></i> Foto</button>";
+      var btnD = "<button class='btn btn-d btn-sm' onclick='delItem(\"filiales\"," + d.id_filial + ")'>Eliminar</button>";
+      var estado = d.activo === "S" ? "<span class='dot g'></span>Activo" : "<span class='dot r'></span>Inactivo";
+      h += row(["<strong>" + (d.nombre || "-") + "</strong>", d.provincia_nombre || "-", d.localidad || "-", d.telefono1 || "-", estado, btnE + " " + btnF + " " + btnD]);
+    }
+    el.innerHTML = h + tblFoot();
+  }).catch(function(e) { el.innerHTML = "<div class='ld'>Error: " + e.message + "</div>"; });
+}
+function loadAnexos() { loadList("anexos", "Anexos", ["nombre","filial_nombre","direccion"], ["Nombre","Filial","Direccion"], "id_anexo", true); }
+function loadPersonas() {
+  var el = $("ld-personas");
+  api("/personas").then(function(r) {
+    if (!r || !r.length) { el.innerHTML = "<div class='ld'>Sin datos</div>"; return; }
+    var h = tblHead("Personas", r.length, "personas");
+    h += "<thead><tr><th>Nombre</th><th>Apellido</th><th>DNI</th><th>Localidad</th><th>Estado</th><th></th></tr></thead><tbody>";
+    for (var i = 0; i < r.length; i++) {
+      var d = r[i];
+      var btnM = "<button class='btn btn-o btn-sm' onclick='openMiembroForm(" + d.id_persona + ")'><i class='bi bi-person-check'></i> Miembro</button>";
+      var btnF = "<button class='btn btn-o btn-sm' onclick='openFoto(\"personas\"," + d.id_persona + ")'><i class='bi bi-image'></i> Foto</button>";
+      var btnD = "<button class='btn btn-d btn-sm' onclick='delItem(\"personas\"," + d.id_persona + ")'>Eliminar</button>";
+      var estado = d.activo === "S" ? "<span class='dot g'></span>Activo" : "<span class='dot r'></span>Inactivo";
+      h += row(["<strong>" + (d.nombre || "-") + "</strong>", d.apellido || "-", d.dni || "-", d.localidad || "-", estado, btnM + " " + btnF + " " + btnD]);
+    }
+    el.innerHTML = h + tblFoot();
+  }).catch(function(e) { el.innerHTML = "<div class='ld'>Error: " + e.message + "</div>"; });
+}
+
+function loadMiembros() { loadListM("miembros", "Miembros"); }
+function loadObreros() { loadList("obreros", "Obreros", ["id_obrero","nombre_miembro","nombre_ministerio"], ["ID","Miembro","Ministerio"], "id_obrero", false); }
+function loadMinisterios() { loadList("ministerios", "Ministerios", ["nombre"], ["Nombre"], "id", false); }
+function loadUsuarios() { loadList("usuarios", "Usuarios", ["email","nombre_usuario"], ["Email","Nombre"], null, false); }
+function loadRoles() { loadList("roles", "Roles", ["nombre_rol","nivel_jerarquico"], ["Rol","Nivel"], null, false); }
+
+function loadCentro() {
+  var el = $("ld-centro");
+  Promise.all([api("/cabeceras"), api("/filiales"), api("/anexos")]).then(function(rr) {
+    var cabs = rr[0] || [], fils = rr[1] || [], anex = rr[2] || [];
+    var h = "<div class='orgbox'>" +
+      "<div class='orgnode top'>Institución TEADEM <span class='badge bg-p'>R.N.C. Nº 251</span></div>" +
+      "<div class='orgnode lv1'>Central - San Javier (Misiones)</div>";
+    cabs.forEach(function(c) {
+      h += "<div class='orgnode lv2'><i class='bi bi-diagram-2'></i> Cabecera: " + (c.nombre || "-") + "</div>";
+      var fc = fils.filter(function(f) { return String(f.id_cabecera) === String(c.id_cabecera); });
+      if (fc.length) {
+        fc.forEach(function(f) {
+          h += "<div class='orgnode lv3'><i class='bi bi-house'></i> " + (f.nombre || "-") + "</div>";
+          var fa = anex.filter(function(a) { return String(a.id_filial) === String(f.id_filial); });
+          if (fa.length) {
+            fa.forEach(function(a) {
+              h += "<div class='orgnode lv4'><i class='bi bi-houses'></i> " + (a.nombre || "-") + "</div>";
+            });
+          }
+        });
+      }
+    });
+    h += "</div>";
+    el.innerHTML = h;
+  }).catch(function(e) { el.innerHTML = "<div class='ld'>Error: " + e.message + "</div>"; });
+}
+
+function loadList(type, title, fields, labels, idField, showState) {
+  var el = $("ld-" + type);
+  api("/" + type).then(function(r) {
+    if (!r || !r.length) { el.innerHTML = "<div class='ld'>Sin datos</div>"; return; }
+    var h = tblHead(title, r.length, type);
+    h += "<thead><tr>";
+    labels.forEach(function(l) { h += "<th>" + l + "</th>"; });
+    if (showState) h += "<th>Estado</th>";
+    if (idField) h += "<th></th>";
+    h += "</tr></thead><tbody>";
+    r.forEach(function(d) {
+      var cols = fields.map(function(f) { return "<strong>" + (d[f] || "-") + "</strong>"; });
+      if (showState) cols.push(d.activo === "S" ? "<span class='dot g'></span>Activo" : "<span class='dot r'></span>Inactivo");
+      if (idField) {
+        cols.push(
+          "<button class='btn btn-o btn-sm' onclick='openForm(\"" + type + "\"," + d[idField] + ")'>Editar</button> " +
+          "<button class='btn btn-d btn-sm' onclick='delItem(\"" + type + "\"," + d[idField] + ")'>Eliminar</button>"
+        );
+      }
+      h += row(cols);
+    });
+    el.innerHTML = h + tblFoot();
+  }).catch(function(e) { el.innerHTML = "<div class='ld'>Error: " + e.message + "</div>"; });
+}
+
+function loadListM(type, title) {
+  var el = $("ld-" + type);
+  api("/" + type).then(function(r) {
+    if (!r || !r.length) { el.innerHTML = "<div class='ld'>Sin datos</div>"; return; }
+    var h = tblHead(title, r.length, type);
+    h += "<thead><tr><th>Persona</th><th>DNI</th><th>Filial</th><th>Estado</th></tr></thead><tbody>";
+    r.forEach(function(d) {
+      var p = d.persona || {};
+      h += row([
+        (p.nombre || "") + " " + (p.apellido || ""),
+        p.dni || "-",
+        d.filial_nombre || "-",
+        d.activo === "S" ? "<span class='dot g'></span>Activo" : "<span class='dot r'></span>Inactivo"
+      ]);
+    });
+    el.innerHTML = h + tblFoot();
+  }).catch(function(e) { el.innerHTML = "<div class='ld'>Error: " + e.message + "</div>"; });
+}
+
+var mType = "", mId = null;
+
+function loadResp(kind, title) {
+  var el = $("ld-resp-" + kind);
+  var type = "responsables-" + kind;
+  api("/" + type).then(function(r) {
+    if (!r || !r.length) { el.innerHTML = "<div class='ld'>Sin datos</div>"; return; }
+    var h = tblHead(title, r.length, "resp-" + kind);
+    h += "<thead><tr><th>Persona</th><th>" + (kind === "filial" ? "Filial" : "Anexo") + "</th><th>Cargo</th><th>Designacion</th><th>Estado</th><th></th></tr></thead><tbody>";
+    r.forEach(function(d) {
+      var id = d["id_responsable_" + kind];
+      var ent = kind === "filial" ? d.filial_nombre : d.anexo_nombre;
+      h += row([
+        "<strong>" + (d.persona_nombre || "-") + "</strong>",
+        ent || "-",
+        d.cargo || "-",
+        d.fecha_designacion || "-",
+        d.activo === "S" ? "<span class='dot g'></span>Activo" : "<span class='dot r'></span>Inactivo",
+        "<button class='btn btn-o btn-sm' onclick='openForm(\"resp-" + kind + "\"," + id + ")'>Editar</button> " +
+        "<button class='btn btn-d btn-sm' onclick='delItem(\"" + type + "\"," + id + ")'>Eliminar</button>"
+      ]);
+    });
+    el.innerHTML = h + tblFoot();
+  }).catch(function(e) { el.innerHTML = "<div class='ld'>Error: " + e.message + "</div>"; });
+}
+function loadRespFilial() { loadResp("filial", "Responsables de Filial"); }
+function loadRespAnexo() { loadResp("anexo", "Responsables de Anexo"); }
+
+function loadReportes() {
+  var el = $("ld-reportes");
+  Promise.all([
+    api("/cabeceras"), api("/filiales"), api("/anexos"), api("/personas"),
+    api("/miembros"), api("/obreros"), api("/responsables-filial"), api("/responsables-anexo"),
+    api("/ministerios")
+  ]).then(function(r) {
+    var def = function(i) { return r[i] && r[i].length ? r[i].length : 0; };
+    var h = "<div class='card'><h3>Resumen institucional</h3><div class='stats'>";
+    var items = [
+      ["Cabeceras", def(0), "p"], ["Filiales", def(1), "p"], ["Anexos", def(2), "p"],
+      ["Personas", def(3), "a"], ["Miembros activos", def(4), "g"], ["Obreros", def(5), "g"],
+      ["Resp. de Filial", def(6), "b"], ["Resp. de Anexo", def(7), "b"], ["Ministerios", def(8), "a"]
+    ];
+    items.forEach(function(it) {
+      h += "<div class='stat'><i class='si " + it[2] + "'>" + it[1] + "</i><div><div class='v'>" + it[1] + "</div><div class='l'>" + it[0] + "</div></div></div>";
+    });
+    h += "</div></div>";
+
+    var porCab = {};
+    (r[0] || []).forEach(function(c) { porCab[c.id_cabecera] = { n: c.nombre, f: 0, a: 0 }; });
+    (r[1] || []).forEach(function(f) {
+      var cb = porCab[f.id_cabecera];
+      if (cb) { cb.f++; }
+    });
+    (r[2] || []).forEach(function(a) {
+      if (porCab[a.id_filial]) { porCab[a.id_filial].a++; }
+    });
+    h += "<div class='card'><h3>Cobertura por cabecera</h3>";
+    var keys = Object.keys(porCab);
+    if (keys.length) {
+      keys.forEach(function(k) {
+        var c = porCab[k];
+        h += "<div style='margin:8px 0'><div style='font-size:12px;color:var(--text2)'>" + c.n + " — Filiales " + c.f + ", Anexos " + c.a + "</div>" +
+          "<div style='background:var(--surface2);border-radius:6px;height:8px;overflow:hidden'>" +
+          "<div style='width:" + Math.min(100, (c.f + c.a) * 8) + "%;height:100%;background:var(--brand)'></div></div></div>";
+      });
+    } else { h += "<div class='ld'>Sin cabeceras</div>"; }
+    h += "</div>";
+    el.innerHTML = h;
+  }).catch(function(e) { el.innerHTML = "<div class='ld'>Error: " + e.message + "</div>"; });
+}
+
+function sel(id, label) {
+  return "<div class='fg'><label class='fl'>" + label + "</label><select class='fi' id='" + id + "'><option value=''>--</option></select></div>";
+}
+function inp(id, label) {
+  return "<div class='fg'><label class='fl'>" + label + "</label><input class='fi' id='" + id + "'></div>";
+}
+function loadSelect(id, url, valField, txtField, selected) {
+  api(url).then(function(list) {
+    var s = $(id), h = "<option value=''>--</option>";
+    if (list && list.length) {
+      list.forEach(function(d) {
+        var v = d[valField], t = d[txtField] || v;
+        h += "<option value='" + v + "'" + (String(v) === String(selected) ? " selected" : "") + ">" + t + "</option>";
+      });
+    }
+    s.innerHTML = h;
+  }).catch(function() {});
+}
+function loadSelectPersona(id, selected) {
+  api("/personas").then(function(list) {
+    var s = $(id), h = "<option value=''>--</option>";
+    if (list && list.length) {
+      list.forEach(function(d) {
+        var label = (d.apellido || "") + ", " + (d.nombre || "") + (d.dni ? " (" + d.dni + ")" : "");
+        h += "<option value='" + d.id_persona + "'" + (String(d.id_persona) === String(selected) ? " selected" : "") + ">" + label + "</option>";
+      });
+    }
+    s.innerHTML = h;
+  }).catch(function() {});
+}
+
+function respApi(type, id) {
+  var base = type === "resp-filial" ? "/responsables-filial" : type === "resp-anexo" ? "/responsables-anexo" : "/" + type;
+  return api(base + (id ? "/" + id : ""));
+}
+
+function openForm(type, id) {
+  mType = type; mId = id || null;
+  function cap(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
+  var label;
+  if (type === "personas") label = "Persona";
+  else if (type === "resp-filial") label = "Responsable de Filial";
+  else if (type === "resp-anexo") label = "Responsable de Anexo";
+  else label = type.slice(0, -1).charAt(0).toUpperCase() + type.slice(1, -1);
+  $("mTitle").textContent = (id ? "Editar " : "Nuev") + (type === "personas" ? "a " : "o ") + label;
+
+  var b = "";
+  if (type === "personas") {
+    b = "<div class='fr'>" + inp("f_nombre","Nombre") + inp("f_apellido","Apellido") + "</div>" +
+        "<div class='fr'>" + inp("f_dni","DNI") + inp("f_email","Email") + "</div>" +
+        "<div class='fr'>" + inp("f_telefono","Telefono") + inp("f_localidad","Localidad") + "</div>" +
+        sel("f_id_provincia","Provincia") + sel("f_ciudad","Ciudad") +
+        sel("f_id_filial","Filial") + inp("f_direccion","Direccion");
+  } else if (type === "cabeceras") {
+    b = inp("f_nombre","Nombre") +
+        "<div class='fr'>" + inp("f_id_region","ID Region") + sel("f_id_provincia","Provincia") + "</div>";
+  } else if (type === "filiales") {
+    b = inp("f_nombre","Nombre") +
+        "<div class='fr'>" + sel("f_id_cabecera","Cabecera") + sel("f_id_provincia","Provincia") + "</div>" +
+        "<div class='fr'>" + inp("f_direccion","Direccion") + inp("f_telefono","Telefono") + "</div>";
+  } else if (type === "anexos") {
+    b = inp("f_nombre","Nombre") +
+        "<div class='fr'>" + sel("f_id_filial","Filial") + inp("f_direccion","Direccion") + "</div>";
+  } else if (type === "miembros") {
+    b = "<div class='fr'>" + inp("f_id_persona","ID Persona") + sel("f_id_filial","Filial") + "</div>";
+  } else if (type === "obreros") {
+    b = "<div class='fr'>" + inp("f_id_miembro","ID Miembro") + inp("f_id_ministerio","ID Ministerio") + "</div>";
+  } else if (type === "resp-filial" || type === "resp-anexo") {
+    var esFilial = type === "resp-filial";
+    b = "<div class='fr'>" + sel("f_id_persona","Persona") + sel(esFilial ? "f_id_filial" : "f_id_anexo", esFilial ? "Filial" : "Anexo") + "</div>" +
+        "<div class='fr'>" + inp("f_cargo","Cargo") + inp("f_fecha_designacion","Designacion (AAAA-MM-DD)") + "</div>" +
+        "<div class='fr'>" + inp("f_fecha_cese","Cese") + inp("f_documento_acta","No. de Acta") + "</div>" +
+        "<div class='fr'>" + inp("f_telefono_contacto","Telefono contacto") + inp("f_email_contacto","Email contacto") + "</div>" +
+        inp("f_observaciones","Observaciones");
+  } else {
+    b = inp("f_nombre","Nombre");
+  }
+  $("mBody").innerHTML = b;
+
+  // Load select options
+  if (type === "personas" || type === "cabeceras" || type === "filiales") {
+    loadSelect("f_id_provincia", "/provincias", "id_provincia", "nombre", 0);
+  }
+  if (type === "personas") {
+    loadSelect("f_id_filial", "/filiales", "id_filial", "nombre", 0);
+    $("f_id_provincia").onchange = function() {
+      var pid = this.value;
+      var sel = $("f_ciudad");
+      sel.innerHTML = "<option value=''>--</option>";
+      if (pid) {
+        api("/provincias/" + pid + "/ciudades").then(function(list) {
+          var h = "<option value=''>--</option>";
+          if (list && list.length) {
+            list.forEach(function(d) { h += "<option value='" + (d.nombre || "") + "'>" + (d.nombre || d.id_ciudad) + "</option>"; });
+          }
+          sel.innerHTML = h;
+        }).catch(function() {});
+      }
+    };
+    $("f_ciudad").onchange = function() { $("f_localidad").value = this.value; };
+  }
+  if (type === "filiales") {
+    loadSelect("f_id_cabecera", "/cabeceras", "id_cabecera", "nombre", 0);
+  }
+  if (type === "anexos" || type === "miembros") {
+    loadSelect("f_id_filial", "/filiales", "id_filial", "nombre", 0);
+  }
+  if (type === "resp-filial") {
+    loadSelect("f_id_filial", "/filiales", "id_filial", "nombre", 0);
+    loadSelectPersona("f_id_persona");
+  }
+  if (type === "resp-anexo") {
+    loadSelect("f_id_anexo", "/anexos", "id_anexo", "nombre", 0);
+    loadSelectPersona("f_id_persona");
+  }
+
+  if (id) {
+    respApi(type, id).then(function(d) {
+      var map = {
+        nombre: "f_nombre", apellido: "f_apellido", dni: "f_dni", email: "f_email",
+        telefono: "f_telefono", localidad: "f_localidad", direccion: "f_direccion",
+        id_region: "f_id_region", id_provincia: "f_id_provincia", id_cabecera: "f_id_cabecera",
+        id_filial: "f_id_filial", id_persona: "f_id_persona", id_miembro: "f_id_miembro", id_ministerio: "f_id_ministerio",
+        id_anexo: "f_id_anexo", cargo: "f_cargo", fecha_designacion: "f_fecha_designacion",
+        fecha_cese: "f_fecha_cese", documento_acta: "f_documento_acta",
+        telefono_contacto: "f_telefono_contacto", email_contacto: "f_email_contacto", observaciones: "f_observaciones"
+      };
+      Object.keys(map).forEach(function(k) {
+        var el = $(map[k]);
+        if (el && d[k] !== undefined && d[k] !== null) {
+          if (!(el.tagName === "SELECT" && k === "id_persona")) {
+            el.value = el.tagName === "SELECT" ? String(d[k]) : d[k];
+          }
+        }
+      });
+      if ((type === "resp-filial" || type === "resp-anexo") && d.id_persona) {
+        loadSelectPersona("f_id_persona", d.id_persona);
+      }
+      if (d.telefono1) { try { $("f_telefono").value = d.telefono1; } catch(ex) {} }
+    }).catch(function() {});
+  }
+  $("modal").classList.add("open");
+}
+
+function openMiembroForm(idPersona) {
+  window._miembroPersonaId = idPersona;
+  window._miembroExistente = null;
+
+  api("/miembros?id_persona=" + idPersona).then(function(resp) {
+    if (resp && resp.length > 0) window._miembroExistente = resp[0];
+    buildMiembroForm(idPersona);
+  }).catch(function() { buildMiembroForm(idPersona); });
+}
+
+function buildMiembroForm(idPersona) {
+  var existente = window._miembroExistente;
+  mType = "miembro"; mId = null;
+  $("mTitle").textContent = existente ? "Editar Miembro" : "Alta Miembro";
+
+  var b = sel("f_id_cabecera","Cabecera") + sel("f_id_filial","Filial");
+  if (existente) {
+    b += "<div class='fg' style='margin-top:8px'><small style='color:var(--text3)'>Filial actual: <strong>" + (existente.filial_nombre || "-") + "</strong></small></div>";
+  }
+  $("mBody").innerHTML = b;
+
+  // Cargar cabeceras manualmente
+  api("/cabeceras").then(function(list) {
+    var s = $("f_id_cabecera"), h = "<option value=''>--</option>";
+    if (list && list.length) {
+      list.forEach(function(d) { h += "<option value='" + d.id_cabecera + "'>" + (d.nombre || "-") + "</option>"; });
+    }
+    s.innerHTML = h;
+  }).catch(function(e) { console.log("Error cabeceras:", e); });
+
+  // Cargar filiales filtradas
+  function cargarFiliales(cabeceraId) {
+    if (!cabeceraId) {
+      api("/filiales").then(function(list) {
+        var s = $("f_id_filial"), h = "<option value=''>--</option>";
+        var sel = existente ? existente.id_filial : 0;
+        if (list && list.length) {
+          list.forEach(function(d) { h += "<option value='" + d.id_filial + "'" + (d.id_filial === sel ? " selected" : "") + ">" + (d.nombre || "-") + "</option>"; });
+        }
+        s.innerHTML = h;
+      }).catch(function() {});
+      return;
+    }
+    api("/filiales").then(function(all) {
+      var s = $("f_id_filial"), h = "<option value=''>--</option>";
+      var sel = existente ? existente.id_filial : 0;
+      var filtradas = all ? all.filter(function(f) { return String(f.id_cabecera) === String(cabeceraId); }) : [];
+      filtradas.forEach(function(d) { h += "<option value='" + d.id_filial + "'" + (d.id_filial === sel ? " selected" : "") + ">" + (d.nombre || "-") + "</option>"; });
+      s.innerHTML = h;
+    }).catch(function() {});
+  }
+
+  $("f_id_cabecera").onchange = function() { cargarFiliales(this.value); };
+
+  if (existente && existente.id_filial) {
+    api("/filiales/" + existente.id_filial).then(function(f) {
+      if (f && f.id_cabecera) {
+        $("f_id_cabecera").value = String(f.id_cabecera);
+        cargarFiliales(f.id_cabecera);
+      } else {
+        cargarFiliales(0);
+      }
+    }).catch(function() { cargarFiliales(0); });
+  } else {
+    cargarFiliales(0);
+  }
+
+  $("modal").classList.add("open");
+}
+
+function saveMiembroModal() {
+  var existente = window._miembroExistente;
+  var data = {
+    id_persona: window._miembroPersonaId,
+    id_filial: parseInt($("f_id_filial").value) || 0,
+    fecha_ingreso: existente ? (existente.fecha_ingreso || new Date().toISOString().split('T')[0]) : new Date().toISOString().split('T')[0]
+  };
+  var url = "/miembros" + (existente ? "/" + existente.id_miembro : "");
+  var method = existente ? "PUT" : "POST";
+  api(url, {method:method, headers:{"Content-Type":"application/json"}, body:JSON.stringify(data)})
+  .then(function(r) {
+    closeModal();
+    toast(existente ? "Miembro actualizado" : "Miembro creado", true);
+    if (r && r.id_miembro) { console.log("Miembro ID:", r.id_miembro, "Filial:", r.filial_nombre); }
+    goPage("miembros");
+  })
+  .catch(function(e) { toast("Error: " + e.message, false); });
+}
+
+function closeModal() {
+  $("modal").classList.remove("open");
+  $("mFooter").style.display = "";
+  mType = ""; mId = null;
+  _fotoType = ""; _fotoId = 0;
+}
+
+function saveModalAction() {
+  if (mType === "miembro") { saveMiembroModal(); return; }
+  saveModal();
+}
+
+function saveModal() {
+  var data = {};
+  var base = mType === "resp-filial" ? "responsables-filial" : mType === "resp-anexo" ? "responsables-anexo" : mType;
+  var url = "/" + base + (mId ? "/" + mId : "");
+  var method = mId ? "PUT" : "POST";
+  document.querySelectorAll("#mBody .fi, #mBody .fs").forEach(function(el) {
+    if (el.value.trim()) data[el.id.substring(2)] = el.value.trim();
+  });
+  if (mType === "filiales" && data.telefono) { data.telefono1 = data.telefono; }
+  api(url, { method: method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(data) })
+  .then(function(r) { closeModal(); toast("Guardado", true); goPage(mType); })
+  .catch(function(e) { toast("Error: " + e.message, false); });
+}
+
+function delItem(type, id) {
+  if (!confirm("Eliminar?")) return;
+  var page = type === "responsables-filial" ? "resp-filial" : type === "responsables-anexo" ? "resp-anexo" : type;
+  api("/" + type + "/" + id, { method: "DELETE" })
+  .then(function() { toast("Eliminado", true); goPage(page); })
+  .catch(function(e) { toast("Error: " + e.message, false); });
+}
+
+var _fotoType = "", _fotoId = 0;
+
+function openFoto(type, id) {
+  _fotoType = type; _fotoId = id;
+  var label = type === "personas" ? "Persona" : "Filial";
+  mType = "foto"; mId = null;
+  $("mFooter").style.display = "none";
+  $("mTitle").textContent = "Foto de " + label + " #" + id;
+  $("mBody").innerHTML =
+    "<div style='text-align:center;margin-bottom:14px'>" +
+    "<img id='fotoPrev' style='max-width:240px;max-height:240px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);display:inline-block'>" +
+    "</div>" +
+    "<div class='fg'><label class='fl'>Archivo de imagen</label>" +
+    "<input type='file' class='fi' id='f_file' accept='image/*'></div>" +
+    "<div class='md-btns'>" +
+    "<button class='btn btn-d' onclick='delFoto()'><i class='bi bi-trash'></i> Eliminar</button>" +
+    "<button class='btn btn-o' onclick='closeModal()'>Cancelar</button>" +
+    "<button class='btn btn-p' onclick='uploadFoto()'><i class='bi bi-upload'></i> Subir</button>" +
+    "</div>";
+  $("modal").classList.add("open");
+  api("/" + type + "/" + id + "/foto").then(function(d) {
+    if (d && d.tiene_foto && d.foto) {
+      $("fotoPrev").src = "data:image/jpeg;base64," + d.foto;
+    } else {
+      $("fotoPrev").src = "";
+      $("fotoPrev").innerHTML = "";
+      $("fotoPrev").outerHTML = "<div style='padding:40px;color:var(--text3);border:1px dashed var(--border);border-radius:8px;display:inline-block' id='fotoPrev'>Sin foto cargada</div>";
+    }
+  }).catch(function() {
+    $("fotoPrev").outerHTML = "<div style='padding:40px;color:var(--text3);border:1px dashed var(--border);border-radius:8px;display:inline-block' id='fotoPrev'>Error al cargar foto</div>";
+  });
+}
+function fileToBase64(file) {
+  return new Promise(function(res, rej) {
+    var fr = new FileReader();
+    fr.onload = function() { res(fr.result.split(",")[1]); };
+    fr.onerror = rej;
+    fr.readAsDataURL(file);
+  });
+}
+
+function uploadFoto() {
+  var file = $("f_file").files[0];
+  if (!file) { toast("Selecciona un archivo", false); return; }
+  fileToBase64(file).then(function(b64) {
+    return api("/" + _fotoType + "/" + _fotoId + "/foto", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ foto: b64 })
+    });
+  }).then(function() {
+    toast("Foto subida", true);
+    closeModal();
+  }).catch(function(e) { toast("Error: " + e.message, false); });
+}
+
+function delFoto() {
+  api("/" + _fotoType + "/" + _fotoId + "/foto", { method: "DELETE" })
+  .then(function() { toast("Foto eliminada", true); closeModal(); })
+  .catch(function(e) { toast("Error: " + e.message, false); });
+}
+
+$("modal").addEventListener("click", function(e) { if (e.target === this) closeModal(); });
+</script>
+</body>
+</html>

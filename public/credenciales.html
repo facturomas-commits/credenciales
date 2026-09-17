@@ -1,0 +1,1091 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Credenciales - TEADEM</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<style>
+body{background:#f1f5f9;font-family:system-ui,sans-serif}
+.header{background:linear-gradient(135deg,#0f3460,#1a1a2e);color:#fff;padding:14px 24px}
+.card{border:none;border-radius:12px;box-shadow:0 4px 24px rgba(0,0,0,0.08);margin-bottom:16px}
+.photo{width:110px;height:135px;object-fit:cover;border-radius:10px;border:2px solid #e2e8f0}
+.badge-status{font-size:0.8rem}
+.btn-step{width:100%;margin-bottom:8px}
+#pcv{background:#111;border-radius:8px;cursor:grab;touch-action:none;display:block;margin:0 auto}
+#pcv.dragging{cursor:grabbing}
+.photo-editor-wrap{position:relative;display:inline-block}
+.photo-tools .btn{margin:2px}
+#printTray{display:none}
+@media print{
+  body *{visibility:hidden !important}
+  #printTray,#printTray *{visibility:visible !important}
+  #printTray{display:block !important;position:absolute;left:0;top:0;width:120mm;height:240mm}
+}
+</style>
+</head>
+<body>
+<div class="header d-flex justify-content-between align-items-center">
+  <h5 class="m-0"><i class="bi bi-card-heading"></i> Credenciales TEADEM</h5>
+  <button class="btn btn-outline-light btn-sm" onclick="logout()"><i class="bi bi-box-arrow-right"></i> Salir</button>
+</div>
+
+<div class="container py-4">
+
+  <!-- Login -->
+  <div id="loginBox">
+    <div class="card p-4 mx-auto" style="max-width:380px">
+      <h5 class="mb-3">Iniciar Sesi&oacute;n</h5>
+      <input class="form-control mb-2" id="email" placeholder="Email">
+      <input class="form-control mb-2" id="pass" type="password" placeholder="Password" onkeyup="if(event.key==='Enter')login()">
+      <button class="btn btn-primary w-100" onclick="login()">Ingresar</button>
+      <div id="loginErr" class="text-danger mt-2 small"></div>
+    </div>
+  </div>
+
+  <!-- Main -->
+  <div id="mainBox" style="display:none">
+    <div class="row g-3 justify-content-center"><div class="col-lg-10">
+      <div class="card p-3">
+        <div class="input-group input-group-sm mb-1">
+          <input class="form-control" id="dniInp" placeholder="DNI..." onkeyup="if(event.key==='Enter')buscar()">
+          <button class="btn btn-primary" onclick="buscar()" title="Buscar"><i class="bi bi-search"></i></button>
+        </div>
+        <div class="input-group input-group-sm mb-1">
+          <input class="form-control" id="apeInp" placeholder="Apellido..." onkeyup="if(event.key==='Enter')buscarApellido()">
+          <button class="btn btn-outline-secondary" onclick="buscarApellido()" title="Buscar apellido"><i class="bi bi-search"></i></button>
+        </div>
+        <div id="apellidoResult" class="mb-2"></div>
+        <div class="row g-3">
+          <div class="col-md-7">
+            <div id="personaData"></div>
+            <div id="estadoData" class="mt-2"></div>
+            <div id="botonesData" class="mt-3"></div>
+          </div>
+          <div class="col-md-5">
+            <div id="previewBox" class="text-center" style="display:none"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-lg-10" id="listaCard">
+      <div class="card p-3">
+        <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
+          <h6 class="mb-0 me-2"><i class="bi bi-list-ul"></i> Credenciales</h6>
+          <input type="text" id="listaBuscar" class="form-control form-control-sm" style="max-width:180px" placeholder="Buscar DNI o nombre..." oninput="filtrarLista(this.value)">
+          <label class="small text-muted mb-0">Desde</label>
+          <input type="date" id="fechaDesde" class="form-control form-control-sm" style="max-width:150px" onchange="cargarLista()">
+          <label class="small text-muted mb-0">Hasta</label>
+          <input type="date" id="fechaHasta" class="form-control form-control-sm" style="max-width:150px" onchange="cargarLista()">
+          <button class="btn btn-outline-secondary btn-sm" onclick="cargarLista()"><i class="bi bi-arrow-clockwise"></i> Actualizar</button>
+          <button class="btn btn-outline-secondary btn-sm" onclick="listaTodas()">Ver todas</button>
+          <button class="btn btn-outline-danger btn-sm" onclick="descargarReporte()"><i class="bi bi-file-earmark-pdf"></i> Reporte PDF</button>
+          <button class="btn btn-outline-danger btn-sm" onclick="vistaPreviaReporte()"><i class="bi bi-eye"></i> Ver Reporte</button>
+          <button class="btn btn-outline-primary btn-sm" onclick="abrirRecibo()"><i class="bi bi-receipt"></i> Recibo</button>
+          <button class="btn btn-outline-primary btn-sm" onclick="abrirRecibosLista()"><i class="bi bi-receipt-cutoff"></i> Recibos</button>
+          <button class="btn btn-dark btn-sm" onclick="imprimirCredencial()"><i class="bi bi-printer"></i> Imprimir</button>
+          <button class="btn btn-success btn-sm" onclick="nuevaPersona()"><i class="bi bi-plus-lg"></i> Nueva</button>
+          <span class="ms-auto small text-muted" id="listaInfo"></span>
+        </div>
+        <div id="listaData"></div>
+      </div>
+    </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Editar Datos -->
+<div class="modal fade" id="editModal" tabindex="-1">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header"><h5 class="modal-title"><i class="bi bi-pencil-square"></i> Editar Datos</h5><button class="btn-close" data-bs-dismiss="modal"></button></div>
+      <div class="modal-body">
+        <div class="row g-2">
+          <div class="col-md-4"><label class="form-label small mb-0">DNI</label><input class="form-control form-control-sm" id="e_dni" readonly></div>
+          <div class="col-md-4"><label class="form-label small mb-0">Apellido</label><input class="form-control form-control-sm" id="e_apellido"></div>
+          <div class="col-md-4"><label class="form-label small mb-0">Nombre</label><input class="form-control form-control-sm" id="e_nombre"></div>
+          <div class="col-md-4"><label class="form-label small mb-0">F. Nacimiento</label><input type="date" class="form-control form-control-sm" id="e_fecha_nacimiento"></div>
+          <div class="col-md-4"><label class="form-label small mb-0">Lugar Nacimiento</label><input class="form-control form-control-sm" id="e_lugar_nacimiento"></div>
+          <div class="col-md-4"><label class="form-label small mb-0">Email</label><input class="form-control form-control-sm" id="e_email"></div>
+          <div class="col-md-4"><label class="form-label small mb-0">Tel&eacute;fono</label><input class="form-control form-control-sm" id="e_telefono"></div>
+          <div class="col-md-4"><label class="form-label small mb-0">Celular</label><input class="form-control form-control-sm" id="e_celular"></div>
+          <div class="col-md-4"><label class="form-label small mb-0">Direcci&oacute;n</label><input class="form-control form-control-sm" id="e_direccion"></div>
+          <div class="col-md-4"><label class="form-label small mb-0">Provincia</label><select class="form-select form-select-sm" id="e_id_provincia"><option value="">--</option></select></div>
+          <div class="col-md-4"><label class="form-label small mb-0">Localidad</label><input class="form-control form-control-sm" id="e_localidad"></div>
+          <div class="col-md-4"><label class="form-label small mb-0">Barrio</label><input class="form-control form-control-sm" id="e_barrio"></div>
+          <div class="col-md-4"><label class="form-label small mb-0">C&oacute;digo Postal</label><input class="form-control form-control-sm" id="e_codigo_postal"></div>
+          <div class="col-md-4"><label class="form-label small mb-0">Estado Civil</label><select class="form-select form-select-sm" id="e_id_estado_civil"><option value="">--</option></select></div>
+          <div class="col-md-4"><label class="form-label small mb-0">F. Bautismo</label><input type="date" class="form-control form-control-sm" id="e_fecha_bautismo"></div>
+          <div class="col-md-4"><label class="form-label small mb-0">Ministerio</label><select class="form-select form-select-sm" id="e_ministerio"><option value="">--</option></select></div>
+          <div class="col-md-4"><label class="form-label small mb-0">T&iacute;tulo Teol&oacute;gico</label><input class="form-control form-control-sm" id="e_titulo_teologico"></div>
+          <div class="col-md-4"><label class="form-label small mb-0">Pastor</label><input class="form-control form-control-sm" id="e_pastor"></div>
+          <div class="col-md-4"><label class="form-label small mb-0">C&oacute;nyuge</label><input class="form-control form-control-sm" id="e_conyuge"></div>
+          <div class="col-md-4"><label class="form-label small mb-0">Vencimiento</label><input type="date" class="form-control form-control-sm" id="e_fecha_vencimiento"></div>
+          <div class="col-md-4"><label class="form-label small mb-0">De baja</label><div class="form-check form-switch mt-1"><input class="form-check-input" type="checkbox" id="e_baja"><label class="form-check-label small" for="e_baja">Baja</label></div></div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
+        <button class="btn btn-primary btn-sm" onclick="guardarDatos()"><i class="bi bi-check-lg"></i> Guardar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Foto -->
+<div class="modal fade" id="fotoModal" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header"><h5 class="modal-title"><i class="bi bi-camera"></i> Editar Foto</h5><button class="btn-close" data-bs-dismiss="modal"></button></div>
+      <div class="modal-body">
+        <div class="text-center">
+          <div class="photo-editor-wrap">
+            <canvas id="pcv" width="360" height="480"></canvas>
+          </div>
+          <div class="photo-tools mt-2">
+            <button class="btn btn-outline-secondary btn-sm" onclick="pCargar()"><i class="bi bi-upload"></i> Importar</button>
+            <button class="btn btn-outline-secondary btn-sm" onclick="pPegar()" title="Pegar del portapapeles (Ctrl+V)"><i class="bi bi-clipboard"></i> Pegar</button>
+            <button class="btn btn-outline-secondary btn-sm" onclick="pAnterior()" title="Traer de credencial anterior"><i class="bi bi-image"></i> Anterior</button>
+            <button class="btn btn-outline-secondary btn-sm" onclick="pFit()"><i class="bi bi-arrows-fullscreen"></i> Ajustar</button>
+            <button class="btn btn-outline-secondary btn-sm" onclick="pZoom(1.2)"><i class="bi bi-plus-lg"></i></button>
+            <button class="btn btn-outline-secondary btn-sm" onclick="pZoom(0.8)"><i class="bi bi-dash-lg"></i></button>
+            <button class="btn btn-outline-secondary btn-sm" onclick="pRotar(-1)"><i class="bi bi-arrow-counterclockwise"></i></button>
+            <button class="btn btn-outline-secondary btn-sm" onclick="pRotar(1)"><i class="bi bi-arrow-clockwise"></i></button>
+            <button class="btn btn-outline-secondary btn-sm" onclick="pVoltear('h')" title="Voltear horizontal"><i class="bi bi-arrow-left-right"></i></button>
+            <button class="btn btn-outline-secondary btn-sm" onclick="pVoltear('v')" title="Voltear vertical"><i class="bi bi-arrow-down-up"></i></button>
+          </div>
+          <div class="small text-muted mt-1">Rueda = zoom &middot; Arrastrar = mover &middot; El recuadro es la zona que se recorta</div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
+        <button class="btn btn-primary btn-sm" onclick="pGuardar()"><i class="bi bi-check-lg"></i> Guardar Foto</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<input type="file" id="fileInp" accept="image/*" style="display:none">
+
+<!-- Modal Recibo -->
+<div class="modal fade" id="reciboModal" tabindex="-1">
+  <div class="modal-dialog modal-sm">
+    <div class="modal-content">
+      <div class="modal-header py-2"><h6 class="modal-title"><i class="bi bi-receipt"></i> Generar Recibo</h6><button class="btn-close" data-bs-dismiss="modal"></button></div>
+      <div class="modal-body">
+        <div class="mb-2"><label class="form-label small mb-0">Recibimos de (iglesia)</label><input class="form-control form-control-sm" id="r_iglesia"></div>
+        <div class="mb-2"><label class="form-label small mb-0">Cantidad de credenciales</label><input type="number" class="form-control form-control-sm" id="r_cantidad" min="1"></div>
+        <div class="mb-2"><label class="form-label small mb-0">Importe ($)</label><input class="form-control form-control-sm" id="r_importe"></div>
+        <div class="mb-2"><label class="form-label small mb-0">Fecha</label><input type="date" class="form-control form-control-sm" id="r_fecha"></div>
+      </div>
+      <div class="modal-footer py-1">
+        <button class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
+        <button class="btn btn-primary btn-sm" onclick="generarRecibo()"><i class="bi bi-file-earmark-pdf"></i> Generar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Impresion PVC -->
+<div class="modal fade" id="impModal" tabindex="-1">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header py-2"><h6 class="modal-title"><i class="bi bi-printer"></i> Imprimir credenciales</h6><button class="btn-close" data-bs-dismiss="modal"></button></div>
+      <div class="modal-body">
+        <div class="mb-2"><label class="form-label small mb-0">Impresora</label><select class="form-select form-select-sm" id="imp_printer"></select></div>
+        <div class="row g-2">
+          <div class="col-md-6">
+            <label class="form-label small mb-0">Tarjeta 1 (DNI)</label>
+            <div class="input-group input-group-sm">
+              <input class="form-control" id="imp_dni1">
+              <button class="btn btn-outline-primary" onclick="cargarTarjeta(1)"><i class="bi bi-image"></i></button>
+            </div>
+            <div class="text-center mt-1" id="imp_prev1"></div>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label small mb-0">Tarjeta 2 (DNI)</label>
+            <div class="input-group input-group-sm">
+              <input class="form-control" id="imp_dni2">
+              <button class="btn btn-outline-primary" onclick="cargarTarjeta(2)"><i class="bi bi-image"></i></button>
+            </div>
+            <div class="text-center mt-1" id="imp_prev2"></div>
+          </div>
+        </div>
+        <div class="row g-2 mt-1" id="imp_calib">
+          <div class="col-3"><label class="form-label small mb-0">X1 (mm)</label><div class="input-group input-group-sm"><button class="btn btn-outline-secondary" onclick="ajustar('x1',-0.2)">-</button><input class="form-control text-center" id="imp_x1" value="17.2"><button class="btn btn-outline-secondary" onclick="ajustar('x1',0.2)">+</button></div></div>
+          <div class="col-3"><label class="form-label small mb-0">Y1 (mm)</label><div class="input-group input-group-sm"><button class="btn btn-outline-secondary" onclick="ajustar('y1',-0.2)">-</button><input class="form-control text-center" id="imp_y1" value="8.5"><button class="btn btn-outline-secondary" onclick="ajustar('y1',0.2)">+</button></div></div>
+          <div class="col-3"><label class="form-label small mb-0">X2 (mm)</label><div class="input-group input-group-sm"><button class="btn btn-outline-secondary" onclick="ajustar('x2',-0.2)">-</button><input class="form-control text-center" id="imp_x2" value="17.2"><button class="btn btn-outline-secondary" onclick="ajustar('x2',0.2)">+</button></div></div>
+          <div class="col-3"><label class="form-label small mb-0">Y2 (mm)</label><div class="input-group input-group-sm"><button class="btn btn-outline-secondary" onclick="ajustar('y2',-0.2)">-</button><input class="form-control text-center" id="imp_y2" value="72.4"><button class="btn btn-outline-secondary" onclick="ajustar('y2',0.2)">+</button></div></div>
+        </div>
+      </div>
+      <div class="modal-footer py-1">
+        <button class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cerrar</button>
+        <button class="btn btn-success btn-sm" onclick="imprimirLocal()"><i class="bi bi-printer"></i> Imprimir local</button>
+        <button class="btn btn-primary btn-sm" onclick="enviarImpresion()"><i class="bi bi-hdd"></i> Imprimir servidor</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Vista previa PDF -->
+<div class="modal fade" id="pdfModal" tabindex="-1">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header py-2"><h6 class="modal-title" id="pdfTitulo">Vista previa</h6><button class="btn-close" data-bs-dismiss="modal"></button></div>
+      <div class="modal-body p-0">
+        <iframe id="pdfFrame" style="width:100%;height:80vh;border:none"></iframe>
+      </div>
+      <div class="modal-footer py-1">
+        <button class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cerrar</button>
+        <button class="btn btn-primary btn-sm" onclick="descargarPdfActual()"><i class="bi bi-download"></i> Descargar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Lista de Recibos -->
+<div class="modal fade" id="recibosListaModal" tabindex="-1">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header py-2"><h6 class="modal-title"><i class="bi bi-receipt-cutoff"></i> Recibos emitidos</h6><button class="btn-close" data-bs-dismiss="modal"></button></div>
+      <div class="modal-body" id="recibosListaBody"></div>
+      <div class="modal-footer py-1">
+        <button class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cerrar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="printTray"></div>
+
+<script>
+var TOKEN="",API=origin,cur=null,modoConsulta=false,previewImgSrc="",previewDni="";
+function q(s){return document.getElementById(s)}
+function api(p,o){
+  o=o||{};o.headers=o.headers||{};
+  if(TOKEN)o.headers.Authorization="Bearer "+TOKEN;
+  return fetch(API+p,o).then(function(r){
+    if(r.status===401){logout();throw new Error("Sesion expirada");}
+    var ct=r.headers.get("content-type")||"";
+    if(r.ok){return ct.indexOf("application/json")>=0?r.json():r.text();}
+    return r.text().then(function(t){
+      var msg=t;
+      try{var j=JSON.parse(t);if(j&&j.error)msg=j.error;}catch(e){}
+      throw new Error(msg);
+    });
+  });
+}
+function login(){
+  var e=q("email").value.trim(),p=q("pass").value.trim();
+  fetch(API+"/usuarios/login",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({email:e,password:p})})
+  .then(function(r){return r.json()})
+  .then(function(d){if(d.token){TOKEN=d.token;modoConsulta=d.nivel_maximo>=10;q("loginBox").style.display="none";q("mainBox").style.display="block";cargarProvincias();if(!modoConsulta)cargarLista();if(modoConsulta)q("listaCard").style.display="none";}else{q("loginErr").textContent=d.error||"Error";}})
+  .catch(function(e){q("loginErr").textContent=e.message;});
+}
+function logout(){TOKEN="";cur=null;q("loginBox").style.display="block";q("mainBox").style.display="none";}
+
+function cargarProvincias(){
+  api("/provincias").then(function(list){
+    var h="<option value=''>--</option>";
+    if(list&&list.length)list.forEach(function(d){h+="<option value='"+d.id_provincia+"'>"+d.nombre+"</option>";});
+    q("e_id_provincia").innerHTML=h;
+  }).catch(function(){});
+}
+
+var EC=[{id:1,n:"Soltero"},{id:2,n:"Casado"},{id:3,n:"Casada"},{id:4,n:"Viudo"},{id:5,n:"Viuda"},{id:6,n:"Soltera"}];
+  var MIN=["Pastor Presidente","Pastor","Evangelista","Anciano","Di\u00e1cono","Diaconisa","Colaborador","Misionero","Misionera"];
+function llenarCombos(){
+  var h="<option value=''>--</option>";
+  EC.forEach(function(e){h+="<option value='"+e.id+"'>"+e.n+"</option>";});
+  q("e_id_estado_civil").innerHTML=h;
+  h="<option value=''>--</option>";
+  MIN.forEach(function(m){h+="<option value='"+m+"'>"+m+"</option>";});
+  q("e_ministerio").innerHTML=h;
+}
+
+function setSelectValor(id, valor){
+  if(valor===undefined||valor===null)valor="";
+  var sel=q(id);
+  var v=String(valor);
+  var norm=function(s){return s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");};
+  var target=norm(v);
+  var found=null;
+  for(var i=0;i<sel.options.length;i++){
+    if(norm(sel.options[i].value)===target){found=sel.options[i].value;break;}
+  }
+  if(found!==null){
+    sel.value=found;
+  }else if(v!==""){
+    var o=document.createElement("option");
+    o.value=v;o.text=v;o.selected=true;
+    sel.appendChild(o);
+    sel.value=v;
+  }else{
+    sel.value="";
+  }
+}
+
+function buscar(){
+  var dni=q("dniInp").value.trim();if(!dni)return;
+  q("personaData").innerHTML="<div class='text-muted small'>Buscando...</div>";
+  q("apellidoResult").innerHTML="";
+  api("/personas/dni/"+dni).then(function(p){
+    cur=p;mostrarPersona(p);mostrarEstado(dni);
+  }).catch(function(e){
+    cur=null;
+    q("estadoData").innerHTML="";q("botonesData").innerHTML="";q("previewBox").style.display="none";
+    buscarArchivosAnterior(dni);
+  });
+}
+
+function buscarArchivosAnterior(termino){
+  q("personaData").innerHTML="<div class='text-muted small'><i class='bi bi-search'></i> Buscando en archivos anteriores por \""+termino+"\"...</div>";
+  api("/personas/archivos-anterior/"+encodeURIComponent(termino)).then(function(list){
+    if(!list||!list.length){
+      q("personaData").innerHTML="<div class='text-danger small'>No hay archivo anterior con ese DNI.</div>"+
+        "<div class='mt-2 small'>Prob&aacute; buscar por apellido:</div>"+
+        "<div class='input-group input-group-sm mt-1' style='max-width:320px'>"+
+        "<input class='form-control' id='apeIaInp' placeholder='Apellido...' onkeyup='if(event.key===\"Enter\")buscarIAporApellido()'>"+
+        "<button class='btn btn-outline-primary' onclick='buscarIAporApellido()'><i class='bi bi-search'></i></button></div>";
+      return;
+    }
+    mostrarListaArchivos(list);
+  }).catch(function(e){
+    q("personaData").innerHTML="<div class='text-danger small'>"+e.message+"</div>";
+  });
+}
+
+function buscarIAporApellido(){
+  var a=q("apeIaInp").value.trim();if(!a)return;
+  q("personaData").innerHTML="<div class='text-muted small'><i class='bi bi-search'></i> Buscando archivos con apellido \""+a+"\"...</div>";
+  api("/personas/archivos-anterior/"+encodeURIComponent(a)).then(function(list){
+    if(!list||!list.length){
+      q("personaData").innerHTML="<div class='text-danger small'>No hay archivos anteriores con ese apellido.</div>";
+      return;
+    }
+    mostrarListaArchivos(list);
+  }).catch(function(e){
+    q("personaData").innerHTML="<div class='text-danger small'>"+e.message+"</div>";
+  });
+}
+
+function mostrarListaArchivos(list){
+  var h="<div class='small fw-semibold mb-2'>Se encontraron "+list.length+" archivo(s). Eleg&iacute; uno para extraer los datos con IA:</div>";
+  h+="<div class='d-flex flex-wrap gap-3'>";
+  list.forEach(function(f){
+    h+="<div class='text-center' style='width:170px;cursor:pointer' onclick='extraerIADeArchivo(\""+encodeURIComponent(f.archivo)+"\")'>"+
+       "<img src=\""+f.miniatura+"\" style='width:160px;height:110px;object-fit:cover;border-radius:6px;border:1px solid var(--bs-border-color)'>"+
+       "<div class='small text-truncate mt-1' title=\""+f.archivo+"\">"+f.archivo+"</div></div>";
+  });
+  h+="</div>";
+  q("personaData").innerHTML=h;
+}
+
+function extraerIADeArchivo(archivo){
+  q("personaData").innerHTML="<div class='text-muted small'><i class='bi bi-stars'></i> Analizando imagen con IA...</div>";
+  api("/personas/extraer-ia/"+archivo).then(function(p){
+    p.nuevo=true;p.origen="OCR";
+    p.archivo_origen=decodeURIComponent(archivo);
+    if(p.dni)p.dni=p.dni.replace(/\./g,"").trim();
+    if(!p.provincia_nombre&&p.provincia)p.provincia_nombre=p.provincia;
+    p.id_estado_civil=ecId(p.estado_civil);
+    cur=p;
+    q("dniInp").value=p.dni||"";
+    mostrarPersona(p);
+    q("personaData").insertAdjacentHTML("beforeend",
+      "<div class='alert alert-info small mt-2'>Datos extra&iacute;dos por IA desde <b>"+p.archivo_origen+"</b>. <button class='btn btn-success btn-sm' onclick='guardarDesdeIA()'><i class='bi bi-check-lg'></i> Cargar como nueva persona</button></div>");
+    q("estadoData").innerHTML="";q("botonesData").innerHTML="";q("previewBox").style.display="none";
+  }).catch(function(e){
+    q("personaData").innerHTML="<div class='text-danger small'>"+e.message+"</div>";
+  });
+}
+
+function ecId(nombre){
+  if(!nombre)return 0;
+  var n=nombre.toLowerCase().trim();
+  if(n.indexOf("casada")>=0)return 3;
+  if(n.indexOf("casado")>=0)return 2;
+  if(n.indexOf("viuda")>=0)return 5;
+  if(n.indexOf("viudo")>=0)return 4;
+  if(n.indexOf("soltera")>=0)return 6;
+  if(n.indexOf("soltero")>=0)return 1;
+  return 0;
+}
+
+function guardarDesdeIA(){
+  if(!cur||!cur.origen){return;}
+  var dni=cur.dni||q("dniInp").value.trim();
+  var archivoOrigen=cur.archivo_origen||"";
+  var data={
+    apellido:cur.apellido||"",nombre:cur.nombre||"",
+    fecha_nacimiento:cur.fecha_nacimiento||"",lugar_nacimiento:cur.lugar_nacimiento||"",
+    email:cur.email||"",telefono:cur.telefono||"",celular:cur.celular||"",
+    direccion:cur.direccion||"",localidad:cur.localidad||"",
+    id_estado_civil:cur.id_estado_civil||0,
+    ministerio:cur.ministerio||"",titulo_teologico:cur.titulo_teologico||"",pastor:cur.pastor||""
+  };
+  api("/credenciales/persona/"+dni,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify(data)})
+  .then(function(r){if(r&&r.error){alert(r.error);return;}
+    if(archivoOrigen){
+      return api("/credenciales/foto-anterior/"+dni,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({archivo:archivoOrigen})});
+    }
+    return null;
+  })
+  .then(function(){
+    alert("Persona cargada correctamente");
+    q("dniInp").value=dni;buscar();
+  }).catch(function(e){alert(e.message);});
+}
+function buscarApellido(){
+  var a=q("apeInp").value.trim();if(!a)return;
+  q("apellidoResult").innerHTML="<div class='text-muted small'>Buscando...</div>";
+  api("/personas?apellido="+encodeURIComponent(a)).then(function(list){
+    if(!list||!list.length){
+      q("apellidoResult").innerHTML="<div class='text-danger small'>Sin resultados en la base de datos.</div>";
+      buscarApellidoEnArchivos(a);
+      return;}
+    var h="<div class='list-group'>";
+    list.forEach(function(p){
+      h+="<button class='list-group-item list-group-item-action py-1 d-flex justify-content-between align-items-center' onclick='elegirPersona(\""+p.dni+"\")'>"+
+         "<span><b>"+p.apellido+"</b>, "+p.nombre+"</span><span class='badge bg-secondary'>"+p.dni+"</span></button>";
+    });
+    h+="</div>";
+    q("apellidoResult").innerHTML=h;
+  }).catch(function(e){q("apellidoResult").innerHTML="<div class='text-danger small'>"+e.message+"</div>";});
+}
+function buscarApellidoEnArchivos(a){
+  q("personaData").innerHTML="<div class='text-muted small'><i class='bi bi-search'></i> Buscando archivos anteriores con \""+a+"\"...</div>";
+  api("/personas/archivos-anterior/"+encodeURIComponent(a)).then(function(list){
+    if(!list||!list.length){
+      q("personaData").innerHTML="<div class='text-danger small'>No hay archivos anteriores con ese apellido.</div>";
+      return;
+    }
+    mostrarListaArchivos(list);
+  }).catch(function(e){
+    q("personaData").innerHTML="<div class='text-danger small'>"+e.message+"</div>";
+  });
+}
+function elegirPersona(dni){
+  q("dniInp").value=dni;
+  q("apellidoResult").innerHTML="";
+  buscar();
+}
+function mostrarPersona(p){
+  var h="";
+  if(p.foto_base64)h+="<img src=\""+p.foto_base64+"\" class=\"photo float-start me-3 mb-2\">";
+  h+="<div><span class=\"badge bg-dark fs-6 mb-2\">DNI: "+p.dni+"</span><br><span class='fs-5 fw-semibold'>"+p.nombre+" "+p.apellido+"</span></div>";
+  h+="<div class=\"small mt-2\"><b>Localidad:</b> "+(p.localidad||"-")+" <b>Prov:</b> "+(p.provincia_nombre||"-")+"</div>";
+  if(p.ministerio)h+="<div class=\"small\"><b>Ministerio:</b> "+p.ministerio+"</div>";
+  if(p.estado_civil)h+="<div class=\"small\"><b>Estado Civil:</b> "+p.estado_civil+"</div>";
+  if(p.titulo_teologico)h+="<div class=\"small\"><b>Formaci&oacute;n:</b> "+p.titulo_teologico+"</div>";
+  if(p.pastor)h+="<div class=\"small\"><b>Pastor:</b> "+p.pastor+"</div>";
+  if(p.filial_nombre)h+="<div class=\"small\"><b>Filial:</b> "+p.filial_nombre+"</div>";
+  if(!modoConsulta)h+="<div class='mt-2 d-flex gap-2'>"+
+     "<button class='btn btn-outline-primary btn-sm' onclick='abrirEditar()'><i class='bi bi-pencil'></i> Editar Datos</button>"+
+     "<button class='btn btn-outline-secondary btn-sm' onclick='abrirFoto()'><i class='bi bi-camera'></i> Foto</button>"+
+     "</div>";
+  q("personaData").innerHTML=h;
+}
+function mostrarEstado(dni){
+  api("/credenciales/estado/"+dni).then(function(e){
+    var h="<div class=\"d-flex gap-2 mt-2\">";
+    h+="<span class=\"badge bg-"+(!e.generada||e.generada=="false"?"secondary":"success")+" badge-status\">Generado</span>";
+    h+="<span class=\"badge bg-"+(!e.impreso||e.impreso=="false"?"secondary":"success")+" badge-status\">Impreso</span>";
+    h+="<span class=\"badge bg-"+(!e.entregado||e.entregado=="false"?"secondary":"success")+" badge-status\">Entregado</span>";
+    h+="<span class=\"badge bg-"+(!e.pagado||e.pagado=="false"?"secondary":"success")+" badge-status\">Pagado</span>";
+    h+="<span class=\"badge bg-"+(e.baja=="true"?"dark":"secondary")+" badge-status\">Baja</span>";
+    h+="<span class=\"badge bg-"+(e.valida=="true"?"success":"danger")+" badge-status\">"+(e.valida=="true"?"V&aacute;lida":"Expirada")+"</span>";
+    h+="</div>";q("estadoData").innerHTML=h;
+    var b="";var gen=e.puede_generar=="true";var esBaja=e.baja=="true";
+    if(!modoConsulta){
+      b="<div class=\"d-flex flex-wrap gap-2 mt-2\">";
+      b+="<button class=\"btn btn-primary btn-sm\" onclick=\"generar()\" "+(gen&&!esBaja?"":"disabled")+">Generar Credencial</button>";
+      b+="<button class=\"btn btn-warning btn-sm\" onclick=\"confirmarImpresion()\" "+((!gen&&!esBaja)?"":"disabled")+">Impresi&oacute;n</button>";
+      b+="<button class=\"btn btn-success btn-sm\" onclick=\"confirmarEntrega()\" "+((!gen&&!esBaja)?"":"disabled")+">Entrega</button>";
+      b+="<button class=\"btn btn-info btn-sm\" onclick=\"confirmarPago()\" "+((!gen&&!esBaja)?"":"disabled")+">Pago</button>";
+      b+="<button class=\"btn btn-"+(esBaja?"success":"outline-dark")+" btn-sm\" onclick=\"toggleBaja("+esBaja+")\">"+(esBaja?"<i class='bi bi-arrow-counterclockwise'></i> Activar":"<i class='bi bi-x-circle'></i> Dar de baja")+"</button>";
+      b+="</div>";
+    }
+    q("botonesData").innerHTML=b;
+    q("previewBox").style.display="block";
+    previewDni=dni;
+    var prevHtml=function(img){previewImgSrc=img;q("previewBox").innerHTML="<img class=\"w-100\" style=\"max-width:600px;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,0.15)\" src=\""+img+"\"><div class='mt-2'><button class='btn btn-outline-primary btn-sm' onclick='descargarCredencial()'><i class='bi bi-download'></i> Descargar</button></div>";};
+    api("/credenciales/imagen/"+dni).then(function(r){
+      if(r.imagen_base64){
+        prevHtml(r.imagen_base64);
+      } else {
+        api("/credenciales/vista-previa/"+dni).then(function(r2){prevHtml(r2.imagen_base64);}).catch(function(){q("previewBox").innerHTML="";});
+      }
+    }).catch(function(){
+      api("/credenciales/vista-previa/"+dni).then(function(r2){prevHtml(r2.imagen_base64);}).catch(function(){q("previewBox").innerHTML="";});
+    });
+  }).catch(function(){q("estadoData").innerHTML="";q("botonesData").innerHTML="";});
+}
+function generar(){var dni=q("dniInp").value.trim();
+  api("/credenciales/generar",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({dni:dni})})
+  .then(function(r){if(r.error){alert(r.error);return;}alert("Credencial generada");buscar();}).catch(function(e){alert(e.message);});}
+function confirmarImpresion(){var dni=q("dniInp").value.trim();
+  api("/credenciales/impresion/"+dni,{method:"PUT"})
+  .then(function(r){alert(r.mensaje||"OK");buscar();}).catch(function(e){alert(e.message);});}
+function confirmarEntrega(){var dni=q("dniInp").value.trim();
+  api("/credenciales/entrega/"+dni,{method:"PUT"})
+  .then(function(r){alert(r.mensaje||"OK");buscar();}).catch(function(e){alert(e.message);});}
+function confirmarPago(){var dni=q("dniInp").value.trim();
+  api("/credenciales/pago/"+dni,{method:"PUT"})
+  .then(function(r){alert(r.mensaje||"OK");buscar();}).catch(function(e){alert(e.message);});}
+function toggleBaja(esBaja){
+  var dni=q("dniInp").value.trim();if(!dni)return;
+  var nueva=esBaja?"N":"S";
+  api("/credenciales/baja/"+dni,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({baja:nueva})})
+  .then(function(r){alert(r.mensaje||"OK");buscar();}).catch(function(e){alert(e.message);});
+}
+function descargarCredencial(){
+  if(!previewImgSrc)return;
+  var a=document.createElement("a");
+  a.href=previewImgSrc;
+  a.download=(previewDni||"credencial")+".jpg";
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+}
+var pdfActualBlob=null;
+function mostrarPdf(dataUrl, titulo){
+  var b64=dataUrl.split(",")[1]||dataUrl;
+  var bin=atob(b64);var arr=new Uint8Array(bin.length);
+  for(var i=0;i<bin.length;i++)arr[i]=bin.charCodeAt(i);
+  pdfActualBlob=new Blob([arr],{type:"application/pdf"});
+  q("pdfFrame").src=URL.createObjectURL(pdfActualBlob);
+  q("pdfTitulo").textContent=titulo||"Vista previa";
+  new bootstrap.Modal(q("pdfModal")).show();
+}
+function descargarPdfActual(){
+  if(!pdfActualBlob)return;
+  var a=document.createElement("a");
+  a.href=URL.createObjectURL(pdfActualBlob);
+  a.download=q("pdfTitulo").textContent.replace(/\s+/g,"_")+".pdf";
+  a.click();
+}
+var impImg1="",impImg2="";
+function cargarImpresorasLocal(){
+  return fetch("http://127.0.0.1:9876/printers")
+    .then(function(r){if(!r.ok)throw new Error("Agente respondió "+r.status);return r.json();})
+    .then(function(data){
+      var lista = (data && data.printers && data.printers.length) ? data.printers
+                : (Array.isArray(data) ? data : []);
+      var s=q("imp_printer"),h="";
+      if(lista.length){
+        lista.forEach(function(p){
+          var nom = p.name || p.nombre || "";
+          var esEpson = nom.toLowerCase().indexOf("epson")>=0;
+          h+="<option value='"+nom.replace(/'/g,"&#39;")+"'"+((esEpson&&!h.includes('selected'))?" selected":"")+">"+nom+"</option>";
+        });
+        s.innerHTML=h;
+        return true;
+      }
+      throw new Error("El agente no devolvió impresoras");
+    });
+}
+function imprimirCredencial(){
+  impImg1="";impImg2="";
+  q("imp_dni1").value="";q("imp_dni2").value="";
+  q("imp_prev1").innerHTML="";q("imp_prev2").innerHTML="";
+  cargarImpresorasLocal().catch(function(){
+    api("/credenciales/impresoras").then(function(list){
+      var s=q("imp_printer"),h="";
+      if(list&&list.length){
+        list.forEach(function(p){
+          var esEpson = (p.nombre||"").toLowerCase().indexOf("epson")>=0;
+          h+="<option value='"+p.nombre.replace(/'/g,"&#39;")+"'"+((esEpson&&!h.includes('selected'))?" selected":"")+">"+p.nombre+"</option>";
+        });
+        s.innerHTML=h;
+      } else {
+        s.innerHTML="<option value=''>Sin impresoras detectadas</option>";
+      }
+    }).catch(function(e){alert(e.message);});
+  });
+  if(cur && cur.dni){q("imp_dni1").value=cur.dni;cargarTarjeta(1);}
+  new bootstrap.Modal(q("impModal")).show();
+}
+function cargarTarjeta(n){
+  var dni=q(n===1?"imp_dni1":"imp_dni2").value.trim();
+  if(!dni){alert("Ingrese el DNI");return;}
+  api("/credenciales/imagen/"+dni).then(function(r){
+    if(!r.imagen_base64){alert("No hay imagen de credencial para "+dni);return;}
+    if(n===1){impImg1=r.imagen_base64;q("imp_prev1").innerHTML="<img src='"+r.imagen_base64+"' style='width:80px;height:50px;object-fit:cover;border:1px solid #ccc;border-radius:4px'>";}
+    else{impImg2=r.imagen_base64;q("imp_prev2").innerHTML="<img src='"+r.imagen_base64+"' style='width:80px;height:50px;object-fit:cover;border:1px solid #ccc;border-radius:4px'>";}
+  }).catch(function(e){alert(e.message);});
+}
+function ajustar(campo,delta){
+  var el=q("imp_"+campo);
+  var v=(parseFloat(el.value)||0)+delta;
+  el.value=Math.round(v*100)/100;
+}
+function imprimirLocal(){
+  if(!impImg1){alert("Cargue la tarjeta 1");return;}
+  if(!impImg2){alert("Cargue la tarjeta 2");return;}
+  var imp=q("imp_printer").value;
+  if(!imp){alert("Seleccione la impresora");return;}
+  var body={
+    impresora:imp,
+    tarjeta1:impImg1,tarjeta2:impImg2,
+    card_width:85.6,card_height:53.98,
+    x1:parseFloat(q("imp_x1").value)||0,y1:parseFloat(q("imp_y1").value)||0,
+    x2:parseFloat(q("imp_x2").value)||0,y2:parseFloat(q("imp_y2").value)||0,
+    paper_width:120,paper_height:240,dpi:300,paper_source:0,orientation:0
+  };
+  fetch("http://127.0.0.1:9876/print/pvc",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)})
+    .then(function(r){return r.json();})
+    .then(function(d){
+      if(d.ok){alert("Impresión enviada a "+imp);bootstrap.Modal.getInstance(q("impModal")).hide();}
+      else alert(d.mensaje||"Error al imprimir");
+    })
+    .catch(function(e){
+      alert("El agente local no está disponible ("+e.message+"). Se abre el diálogo de impresión del navegador.");
+      imprimirLocalNavegador();
+    });
+}
+function imprimirLocalNavegador(){
+  var x1=parseFloat(q("imp_x1").value)||0, y1=parseFloat(q("imp_y1").value)||0;
+  var x2=parseFloat(q("imp_x2").value)||0, y2=parseFloat(q("imp_y2").value)||0;
+  var cardW=85.6, cardH=53.98;
+  var tray=q("printTray");
+  var img1 = impImg1 ? "<img src='"+impImg1+"' style='width:100%;height:100%;object-fit:contain'>" : "<div style='width:100%;height:100%;border:1px dashed #999'></div>";
+  var img2 = impImg2 ? "<img src='"+impImg2+"' style='width:100%;height:100%;object-fit:contain'>" : "<div style='width:100%;height:100%;border:1px dashed #999'></div>";
+  tray.innerHTML=
+    "<div style='position:absolute;left:"+x1+"mm;top:"+y1+"mm;width:"+cardW+"mm;height:"+cardH+"mm'>"+img1+"</div>"+
+    "<div style='position:absolute;left:"+x2+"mm;top:"+y2+"mm;width:"+cardW+"mm;height:"+cardH+"mm'>"+img2+"</div>";
+  window.print();
+}
+function enviarImpresion(){
+  var imp=q("imp_printer").value;
+  if(!imp){alert("Seleccione la impresora");return;}
+  if(!impImg1){alert("Cargue la tarjeta 1");return;}
+  if(!impImg2){alert("Cargue la tarjeta 2");return;}
+  api("/credenciales/imprimir",{method:"POST",headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({impresora:imp,tarjeta1:impImg1,tarjeta2:impImg2,
+      x1:parseFloat(q("imp_x1").value)||0,y1:parseFloat(q("imp_y1").value)||0,
+      x2:parseFloat(q("imp_x2").value)||0,y2:parseFloat(q("imp_y2").value)||0})})
+  .then(function(d){if(d.ok){alert("Impresión enviada");bootstrap.Modal.getInstance(q("impModal")).hide();}else{alert(d.mensaje||"Error");}})
+  .catch(function(e){alert(e.message);});
+}
+function vistaPreviaReporte(){
+  var desde=q("fechaDesde").value, hasta=q("fechaHasta").value;
+  var url="/credenciales/reporte";
+  var ps=[];
+  if(desde)ps.push("fecha_desde="+encodeURIComponent(desde));
+  if(hasta)ps.push("fecha_hasta="+encodeURIComponent(hasta));
+  if(ps.length)url+="?"+ps.join("&");
+  fetch(API+url,{headers:{"Authorization":"Bearer "+TOKEN}})
+  .then(function(r){if(!r.ok)throw new Error("Error");return r.json();})
+  .then(function(d){if(d.error){alert(d.error);return;}if(!d.pdf_base64){alert("Sin datos");return;}mostrarPdf(d.pdf_base64,"Reporte Credenciales");})
+  .catch(function(e){alert(e.message);});
+}
+function abrirRecibosLista(){
+  api("/credenciales/recibos").then(function(list){
+    if(!list||!list.length){q("recibosListaBody").innerHTML="<div class='text-muted small'>Sin recibos emitidos</div>";new bootstrap.Modal(q("recibosListaModal")).show();return;}
+    var h="<div class='table-responsive'><table class='table table-sm align-middle mb-0'><thead><tr><th>N°</th><th>Fecha</th><th>Iglesia</th><th>Cant.</th><th>Importe</th><th></th></tr></thead><tbody>";
+    list.forEach(function(r){
+      h+="<tr><td>"+r.numero+"</td><td class='small'>"+(r.fecha||"-")+"</td><td>"+r.iglesia+"</td><td>"+r.cantidad+"</td><td>$ "+r.importe+"</td>"+
+         "<td><button class='btn btn-outline-primary btn-sm' onclick='verRecibo("+r.numero+")'><i class='bi bi-eye'></i> Ver</button> "+
+         "<button class='btn btn-outline-secondary btn-sm' onclick='reimprimirRecibo("+r.numero+")'><i class='bi bi-printer'></i></button></td></tr>";
+    });
+    h+="</tbody></table></div>";
+    q("recibosListaBody").innerHTML=h;
+    new bootstrap.Modal(q("recibosListaModal")).show();
+  }).catch(function(e){alert(e.message);});
+}
+function verRecibo(numero){
+  try{ var m=bootstrap.Modal.getInstance(q("recibosListaModal")); if(m) m.hide(); }catch(e){}
+  api("/credenciales/recibo/"+numero).then(function(d){
+    if(d.error){alert(d.error);return;}
+    mostrarPdf(d.pdf_base64,"Recibo N° "+numero);
+  }).catch(function(e){alert(e.message);});
+}
+function reimprimirRecibo(numero){
+  api("/credenciales/recibo/"+numero).then(function(d){
+    if(d.error){alert(d.error);return;}
+    var b64=d.pdf_base64.split(",")[1]||d.pdf_base64;
+    var bin=atob(b64);var arr=new Uint8Array(bin.length);
+    for(var i=0;i<bin.length;i++)arr[i]=bin.charCodeAt(i);
+    var blob=new Blob([arr],{type:"application/pdf"});
+    var a=document.createElement("a");
+    a.href=URL.createObjectURL(blob);
+    a.download="recibo_"+numero+".pdf";
+    a.click();
+  }).catch(function(e){alert(e.message);});
+}
+
+function abrirRecibo(){
+  q("r_iglesia").value="";q("r_cantidad").value="";q("r_importe").value="";
+  var d=new Date();q("r_fecha").value=d.getFullYear()+"-"+("0"+(d.getMonth()+1)).slice(-2)+"-"+("0"+d.getDate()).slice(-2);
+  new bootstrap.Modal(q("reciboModal")).show();
+}
+function generarRecibo(){
+  var iglesia=q("r_iglesia").value.trim();
+  var cantidad=q("r_cantidad").value.trim();
+  var importe=q("r_importe").value.trim();
+  var fecha=q("r_fecha").value;
+  if(!iglesia){alert("Ingrese el nombre de la iglesia");return;}
+  if(!cantidad){alert("Ingrese la cantidad");return;}
+  if(!importe){alert("Ingrese el importe");return;}
+  api("/credenciales/recibo",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({iglesia:iglesia,cantidad:cantidad,importe:importe,fecha:fecha})})
+  .then(function(d){
+    if(d.error){alert(d.error);return;}
+    var b64=d.pdf_base64.split(",")[1]||d.pdf_base64;
+    var bin=atob(b64);var arr=new Uint8Array(bin.length);
+    for(var i=0;i<bin.length;i++)arr[i]=bin.charCodeAt(i);
+    var blob=new Blob([arr],{type:"application/pdf"});
+    var a=document.createElement("a");
+    a.href=URL.createObjectURL(blob);
+    a.download="recibo_"+(d.numero||"")+".pdf";
+    a.click();
+    bootstrap.Modal.getInstance(q("reciboModal")).hide();
+  })
+  .catch(function(e){alert(e.message);});
+}
+
+// ---------- Lista de credenciales ----------
+function cargarLista(){
+  var desde=q("fechaDesde").value, hasta=q("fechaHasta").value;
+  var url="/credenciales/lista";
+  var ps=[];
+  if(desde)ps.push("fecha_desde="+encodeURIComponent(desde));
+  if(hasta)ps.push("fecha_hasta="+encodeURIComponent(hasta));
+  if(ps.length)url+="?"+ps.join("&");
+  api(url).then(function(list){
+    if(!list||!list.length){q("listaData").innerHTML="<div class='text-muted small'>Sin credenciales para esta fecha</div>";q("listaInfo").textContent="";return;}
+    q("listaInfo").textContent=list.length+" credencial(es)";
+    var h="<div class='table-responsive'><table class='table table-sm align-middle mb-0'><thead><tr><th>Foto</th><th>Fecha</th><th>DNI</th><th>Nombre</th><th class='text-center'>Impresa</th><th class='text-center'>Entregada</th><th class='text-center'>Pagada</th><th class='text-center'>Sin Cargo</th><th class='text-center'>Baja</th><th>Vence</th></tr></thead><tbody>";
+    list.forEach(function(c){
+      var foto = c.foto_base64
+        ? "<img src='"+c.foto_base64+"' style='width:38px;height:48px;object-fit:cover;border-radius:4px;border:1px solid #ccc'>"
+        : "<div style='width:38px;height:48px;border-radius:4px;border:1px dashed #ccc;display:flex;align-items:center;justify-content:center;color:#bbb'><i class='bi bi-person'></i></div>";
+      h+="<tr><td>"+foto+"</td><td class='small'>"+fmtFecha(c.fecha)+"</td><td class='small' style='cursor:pointer' title='Doble clic para abrir' ondblclick=\"elegirPersona('"+c.dni+"')\">"+c.dni+"</td><td>"+((c.apellido||"")+" "+(c.nombre||"")).trim()+"</td>"+
+         "<td class='text-center'>"+chk(c.id,"impreso",c.impreso)+"</td>"+
+         "<td class='text-center'>"+chk(c.id,"entregado",c.entregado)+"</td>"+
+         "<td class='text-center'>"+chk(c.id,"pagado",c.pagado)+"</td>"+
+         "<td class='text-center'>"+chk(c.id,"sin_cargo",c.sin_cargo)+"</td>"+
+         "<td class='text-center'>"+chk(c.id,"baja",c.baja)+"</td>"+
+         "<td><input type='date' class='form-control form-control-sm' style='width:145px' value='"+(c.fecha_vencimiento||"")+"' onchange=\"setVencimiento("+c.id+",this.value)\"></td></tr>";
+    });
+    h+="</tbody></table></div>";
+    q("listaData").innerHTML=h;
+  }).catch(function(e){q("listaData").innerHTML="<div class='text-danger small'>"+e.message+"</div>";});
+}
+function chk(id,campo,val){
+  return "<input type='checkbox' class='form-check-input' "+(val==="S"?"checked":"")+" onchange=\"setRegistro("+id+",'"+campo+"',this.checked)\">";
+}
+function setRegistro(id,campo,val){
+  var body={};body[campo]=val?"S":"N";
+  api("/credenciales/registro/"+id,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)})
+  .then(function(){cargarLista();})
+  .catch(function(e){alert(e.message);cargarLista();});
+}
+function setVencimiento(id,val){
+  api("/credenciales/registro/"+id,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({fecha_vencimiento: val||""})})
+  .then(function(){cargarLista();})
+  .catch(function(e){alert(e.message);cargarLista();});
+}
+function listaTodas(){q("fechaDesde").value="";q("fechaHasta").value="";cargarLista();}
+function filtrarLista(v){
+  v=v.toLowerCase();
+  document.querySelectorAll("#listaData tbody tr").forEach(function(tr){
+    tr.style.display = tr.textContent.toLowerCase().indexOf(v)>=0 ? "" : "none";
+  });
+}
+function fmtFecha(s){
+  if(!s)return "-";
+  return s.replace("T"," ").substring(0,16);
+}
+function descargarReporte(){
+  var desde=q("fechaDesde").value, hasta=q("fechaHasta").value;
+  var url="/credenciales/reporte";
+  var ps=[];
+  if(desde)ps.push("fecha_desde="+encodeURIComponent(desde));
+  if(hasta)ps.push("fecha_hasta="+encodeURIComponent(hasta));
+  if(ps.length)url+="?"+ps.join("&");
+  fetch(API+url,{headers:{"Authorization":"Bearer "+TOKEN}})
+  .then(function(r){if(!r.ok)throw new Error("Error generando reporte");return r.json();})
+  .then(function(d){
+    if(d.error){alert(d.error);return;}
+    if(!d.pdf_base64){alert("Sin datos");return;}
+    var b64=d.pdf_base64.split(",")[1]||d.pdf_base64;
+    var bin=atob(b64);
+    var arr=new Uint8Array(bin.length);
+    for(var i=0;i<bin.length;i++)arr[i]=bin.charCodeAt(i);
+    var blob=new Blob([arr],{type:"application/pdf"});
+    var a=document.createElement("a");
+    a.href=URL.createObjectURL(blob);
+    a.download="reporte_credenciales"+(desde||hasta?("_"+desde+"_a_"+hasta):"")+".pdf";
+    a.click();
+  })
+  .catch(function(e){alert(e.message);});
+}
+
+// ---------- Editar datos ----------
+var modoNuevo=false;
+function abrirEditar(){
+  if(!cur)return;
+  modoNuevo=false;
+  var p=cur;
+  q("e_dni").readOnly=true;
+  q("e_dni").value=p.dni||"";
+  q("e_apellido").value=p.apellido||"";
+  q("e_nombre").value=p.nombre||"";
+  q("e_fecha_nacimiento").value=p.fecha_nacimiento||"";
+  q("e_lugar_nacimiento").value=p.lugar_nacimiento||"";
+  q("e_email").value=p.email||"";
+  q("e_telefono").value=p.telefono||"";
+  q("e_celular").value=p.celular||"";
+  q("e_direccion").value=p.direccion||"";
+  q("e_id_provincia").value=p.id_provincia?String(p.id_provincia):"";
+  q("e_localidad").value=p.localidad||"";
+  q("e_barrio").value=p.barrio||"";
+  q("e_codigo_postal").value=p.codigo_postal||"";
+  q("e_id_estado_civil").value=p.id_estado_civil?String(p.id_estado_civil):"";
+  q("e_fecha_bautismo").value=p.fecha_bautismo||"";
+  setSelectValor("e_ministerio", p.ministerio);
+  q("e_titulo_teologico").value=p.titulo_teologico||"";
+  q("e_pastor").value=p.pastor||"";
+  q("e_conyuge").value=p.conyuge||"";
+  api("/credenciales/estado/"+p.dni).then(function(e){
+    q("e_baja").checked=e.baja==="true";
+    q("e_fecha_vencimiento").value=e.vencimiento||"";
+  }).catch(function(){});
+  new bootstrap.Modal(q("editModal")).show();
+}
+function nuevaPersona(){
+  modoNuevo=true;
+  q("e_dni").readOnly=false;
+  q("e_dni").value="";
+  q("e_apellido").value="";
+  q("e_nombre").value="";
+  q("e_fecha_nacimiento").value="";
+  q("e_lugar_nacimiento").value="";
+  q("e_email").value="";
+  q("e_telefono").value="";
+  q("e_celular").value="";
+  q("e_direccion").value="";
+  q("e_id_provincia").value="";
+  q("e_localidad").value="";
+  q("e_barrio").value="";
+  q("e_codigo_postal").value="";
+  q("e_id_estado_civil").value="";
+  q("e_fecha_bautismo").value="";
+  q("e_ministerio").value="";
+  q("e_titulo_teologico").value="";
+  q("e_pastor").value="";
+  q("e_conyuge").value="";
+  q("e_baja").checked=false;
+  q("e_fecha_vencimiento").value="";
+  new bootstrap.Modal(q("editModal")).show();
+}
+function guardarDatos(){
+  var dni=modoNuevo?q("e_dni").value.trim():(cur?cur.dni:"");
+  if(!dni){alert("Ingrese DNI");return;}
+  if(!q("e_apellido").value.trim()||!q("e_nombre").value.trim()){alert("Apellido y nombre son requeridos");return;}
+  var data={
+    apellido:q("e_apellido").value.trim(),nombre:q("e_nombre").value.trim(),
+    fecha_nacimiento:q("e_fecha_nacimiento").value,lugar_nacimiento:q("e_lugar_nacimiento").value.trim(),
+    email:q("e_email").value.trim(),telefono:q("e_telefono").value.trim(),celular:q("e_celular").value.trim(),
+    direccion:q("e_direccion").value.trim(),id_provincia:parseInt(q("e_id_provincia").value)||0,
+    localidad:q("e_localidad").value.trim(),barrio:q("e_barrio").value.trim(),codigo_postal:q("e_codigo_postal").value.trim(),
+    id_estado_civil:parseInt(q("e_id_estado_civil").value)||0,fecha_bautismo:q("e_fecha_bautismo").value,
+    ministerio:q("e_ministerio").value,titulo_teologico:q("e_titulo_teologico").value.trim(),
+    pastor:q("e_pastor").value.trim(),conyuge:q("e_conyuge").value.trim(),
+    baja:q("e_baja").checked?"S":"N",fecha_vencimiento:q("e_fecha_vencimiento").value
+  };
+  api("/credenciales/persona/"+dni,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify(data)})
+  .then(function(r){if(r.error){alert(r.error);return;}
+    bootstrap.Modal.getInstance(q("editModal")).hide();
+    alert(modoNuevo?"Persona creada":"Datos guardados");
+    if(modoNuevo){q("dniInp").value=dni;cur=null;}
+    buscar();cargarLista();})
+  .catch(function(e){alert(e.message);});
+}
+
+// ---------- Editor de foto ----------
+var psrc=null,pscale=1,pox=0,poy=0,pdrag=false,plx=0,ply=0,pdni=null;
+var GUIDEX=30,GUIDEY=50,GUIDEW=300,GUIDEH=380; // ratio 300:380 (retrato)
+function pctx(){return q("pcv").getContext("2d");}
+function abrirFoto(){
+  if(!cur)return;
+  pdni=cur.dni;
+  psrc=null;pdraw();
+  if(cur.foto_base64){
+    var img=new Image();
+    img.onload=function(){setSrc(img);};
+    img.onerror=function(){toast("No se pudo cargar la foto");};
+    img.src=cur.foto_base64;
+  }
+  new bootstrap.Modal(q("fotoModal")).show();
+}
+function setSrc(img){
+  var c=document.createElement("canvas");
+  c.width=img.naturalWidth||img.width;c.height=img.naturalHeight||img.height;
+  c.getContext("2d").drawImage(img,0,0);
+  psrc=c;pFit();
+}
+function pCargar(){
+  q("fileInp").onchange=function(){
+    var f=this.files[0];if(!f)return;
+    cargarImgFile(f);
+    this.value="";
+  };
+  q("fileInp").click();
+}
+function cargarImgFile(f){
+  var fr=new FileReader();
+  fr.onload=function(){var img=new Image();img.onload=function(){setSrc(img);};img.src=fr.result;};
+  fr.readAsDataURL(f);
+}
+function pAnterior(){
+  if(!pdni){alert("No hay DNI");return;}
+  api("/credenciales/imagen-anterior/"+pdni).then(function(r){
+    if(r.imagen_base64){
+      var img=new Image();
+      img.onload=function(){setSrc(img);};
+      img.src=r.imagen_base64;
+    } else {
+      alert("No hay credencial anterior para este DNI");
+    }
+  }).catch(function(e){alert(e.message);});
+}
+function pPegar(){
+  if(navigator.clipboard && navigator.clipboard.read){
+    navigator.clipboard.read().then(function(items){
+      for(var i=0;i<items.length;i++){
+        var t=items[i].getType?items[i].types:null;
+        if(items[i].types && items[i].types.indexOf("image/png")>=0){
+          items[i].getType("image/png").then(function(blob){cargarImgFile(blob);});
+          return;
+        }
+        if(items[i].types && items[i].types.indexOf("image/jpeg")>=0){
+          items[i].getType("image/jpeg").then(function(blob){cargarImgFile(blob);});
+          return;
+        }
+      }
+      alert("El portapapeles no tiene una imagen");
+    }).catch(function(){alert("No se pudo leer el portapapeles. Usá Ctrl+V");});
+  } else {
+    alert("Presioná Ctrl+V para pegar la imagen");
+  }
+}
+document.addEventListener("paste",function(e){
+  var fotoModal = document.getElementById("fotoModal");
+  if(!fotoModal || !fotoModal.classList.contains("show")) return;
+  var items=(e.clipboardData||{}).items;
+  if(!items) return;
+  for(var i=0;i<items.length;i++){
+    if(items[i].type.indexOf("image")===0){
+      var f=items[i].getAsFile();
+      if(f){ cargarImgFile(f); }
+      e.preventDefault();
+      break;
+    }
+  }
+});
+function pFit(){
+  if(!psrc)return;
+  pscale=Math.max(GUIDEW/psrc.width,GUIDEH/psrc.height);
+  pox=GUIDEX+(GUIDEW-psrc.width*pscale)/2;
+  poy=GUIDEY+(GUIDEH-psrc.height*pscale)/2;
+  pdraw();
+}
+function pZoom(f){
+  if(!psrc)return;
+  var cx=GUIDEX+GUIDEW/2,cy=GUIDEY+GUIDEH/2;
+  var ns=pscale*f;ns=Math.max(0.05,Math.min(ns,8));
+  pox=cx-(cx-pox)*(ns/pscale);poy=cy-(cy-poy)*(ns/pscale);
+  pscale=ns;pdraw();
+}
+function pRotar(dir){
+  if(!psrc)return;
+  var c=document.createElement("canvas");
+  c.width=psrc.height;c.height=psrc.width;
+  var x=c.getContext("2d");
+  x.translate(c.width/2,c.height/2);
+  x.rotate(dir*Math.PI/2);
+  x.drawImage(psrc,-psrc.width/2,-psrc.height/2);
+  psrc=c;pFit();
+}
+function pVoltear(axis){
+  if(!psrc)return;
+  var c=document.createElement("canvas");
+  c.width=psrc.width;c.height=psrc.height;
+  var x=c.getContext("2d");
+  if(axis==="h"){
+    x.translate(c.width,0);
+    x.scale(-1,1);
+  } else {
+    x.translate(0,c.height);
+    x.scale(1,-1);
+  }
+  x.drawImage(psrc,0,0);
+  psrc=c;pFit();
+}
+function pdraw(){
+  var cv=q("pcv"),x=pctx();
+  x.fillStyle="#111";x.fillRect(0,0,cv.width,cv.height);
+  if(psrc){
+    x.drawImage(psrc,pox,poy,psrc.width*pscale,psrc.height*pscale);
+  }else{
+    x.fillStyle="#666";x.font="14px system-ui";x.textAlign="center";
+    x.fillText("Sin foto - Importa una imagen",cv.width/2,cv.height/2);
+  }
+  // oscurecer fuera del recuadro
+  x.fillStyle="rgba(0,0,0,0.45)";
+  x.fillRect(0,0,cv.width,GUIDEY);
+  x.fillRect(0,GUIDEY+GUIDEH,cv.width,cv.height-(GUIDEY+GUIDEH));
+  x.fillRect(0,GUIDEY,GUIDEX,GUIDEH);
+  x.fillRect(GUIDEX+GUIDEW,GUIDEY,cv.width-(GUIDEX+GUIDEW),GUIDEH);
+  // recuadro
+  x.strokeStyle="#fff";x.lineWidth=2;
+  x.strokeRect(GUIDEX,GUIDEY,GUIDEW,GUIDEH);
+}
+function pGuardar(){
+  if(!psrc){toast("No hay imagen");return;}
+  var sx=(GUIDEX-pox)/pscale, sy=(GUIDEY-poy)/pscale;
+  var sw=GUIDEW/pscale, sh=GUIDEH/pscale;
+  sx=Math.max(0,sx);sy=Math.max(0,sy);
+  sw=Math.min(psrc.width-sx,sw);sh=Math.min(psrc.height-sy,sh);
+  if(sw<=0||sh<=0){toast("Ajusta la imagen dentro del recuadro");return;}
+  var out=document.createElement("canvas");
+  out.width=600;out.height=760;
+  var x=out.getContext("2d");
+  x.fillStyle="#fff";x.fillRect(0,0,600,760);
+  x.drawImage(psrc,sx,sy,sw,sh,0,0,600,760);
+  var data=out.toDataURL("image/jpeg",0.92);
+  api("/credenciales/foto/"+pdni,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({imagen_base64:data})})
+  .then(function(r){if(r.error){alert(r.error);return;}
+    bootstrap.Modal.getInstance(q("fotoModal")).hide();toast("Foto guardada");buscar();})
+  .catch(function(e){alert(e.message);});
+}
+function toast(m){alert(m);}
+
+// eventos canvas
+(function(){
+  var cv=q("pcv");
+  function pos(e){
+    var r=cv.getBoundingClientRect();
+    var cx=(e.touches&&e.touches[0]?e.touches[0].clientX:e.clientX)-r.left;
+    var cy=(e.touches&&e.touches[0]?e.touches[0].clientY:e.clientY)-r.top;
+    cx=cx*(cv.width/r.width);cy=cy*(cv.height/r.height);
+    return {x:cx,y:cy};
+  }
+  cv.addEventListener("mousedown",function(e){pdrag=true;var p=pos(e);plx=p.x;ply=p.y;cv.classList.add("dragging");});
+  window.addEventListener("mousemove",function(e){if(!pdrag||!psrc)return;var p=pos(e);pox+=p.x-plx;poy+=p.y-ply;plx=p.x;ply=p.y;pdraw();});
+  window.addEventListener("mouseup",function(){pdrag=false;cv.classList.remove("dragging");});
+  cv.addEventListener("wheel",function(e){e.preventDefault();if(!psrc)return;var p=pos(e);var ns=pscale*(e.deltaY<0?1.15:0.87);ns=Math.max(0.05,Math.min(ns,8));pox=p.x-(p.x-pox)*(ns/pscale);poy=p.y-(p.y-poy)*(ns/pscale);pscale=ns;pdraw();},{passive:false});
+  cv.addEventListener("touchstart",function(e){e.preventDefault();pdrag=true;var p=pos(e);plx=p.x;ply=p.y;},{passive:false});
+  cv.addEventListener("touchmove",function(e){e.preventDefault();if(!pdrag||!psrc)return;var p=pos(e);pox+=p.x-plx;poy+=p.y-ply;plx=p.x;ply=p.y;pdraw();},{passive:false});
+  cv.addEventListener("touchend",function(){pdrag=false;});
+})();
+
+llenarCombos();
+(function(){var d=new Date();var hoy=d.getFullYear()+"-"+("0"+(d.getMonth()+1)).slice(-2)+"-"+("0"+d.getDate()).slice(-2);q("fechaDesde").value=hoy;q("fechaHasta").value=hoy;})();
+</script>
+</body>
+</html>
