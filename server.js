@@ -13,6 +13,12 @@ app.disable('x-powered-by');
 // 1) Web estatica (admin.html, credenciales.html, membrete.jpg)
 app.use(express.static(path.join(__dirname, 'public'), { extensions: ['html'] }));
 
+// 1b) Rutas estilo backend -> sirven la web NUEVA (evita que el proxy traiga la vieja)
+app.get(['/admin', '/admin/'], (req, res) =>
+  res.sendFile(path.join(__dirname, 'public', 'admin.html')));
+app.get(['/admin/credenciales', '/admin/credenciales/'], (req, res) =>
+  res.sendFile(path.join(__dirname, 'public', 'credenciales.html')));
+
 // 2) Todo lo demas (personas, credenciales, usuarios, filiales, ...) -> backend Horse
 app.use(createProxyMiddleware({
   target: BACKEND_URL,
