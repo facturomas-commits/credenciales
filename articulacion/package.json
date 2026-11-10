@@ -1,0 +1,16 @@
+{
+  "name": "articulacion-2026",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Sitio web de la Articulación 2026 - Nivel Inicial (NENI 2154 Ext. 626) y 1er Grado Esc. 626",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.21.2"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

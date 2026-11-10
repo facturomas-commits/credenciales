@@ -6,25 +6,12 @@ const { createProxyMiddleware } = require('http-proxy-middleware');
 
 const PORT = process.env.PORT || 3301;
 const BACKEND_URL = process.env.BACKEND_URL || 'http://172.168.20.183:3251';
-const ARTICULACION_HOST = 'articulacion2026.ceka.com.ar';
 
 const app = express();
 app.disable('x-powered-by');
 
-// 0) Si el pedido llega por el subdominio de la Articulación, servimos ese sitio en la raíz.
-//    (Sirve como respaldo si nginx apunta este proceso al puerto 3301 en lugar del 3032.)
-app.use((req, res, next) => {
-  if ((req.hostname || '').toLowerCase() !== ARTICULACION_HOST) return next();
-  express.static(path.join(__dirname, 'articulacion', 'public'), { extensions: ['html'] })(req, res, next);
-});
-
 // 1) Web estatica (admin.html, credenciales.html, membrete.jpg)
 app.use(express.static(path.join(__dirname, 'public'), { extensions: ['html'] }));
-
-// 1a) Sitio de la Articulación 2026 (también accesible en /articulacion/)
-app.use('/articulacion', express.static(path.join(__dirname, 'articulacion', 'public'), {
-  extensions: ['html'],
-}));
 
 // 1b) Rutas estilo backend -> sirven la web NUEVA (evita que el proxy traiga la vieja)
 app.get(['/admin', '/admin/'], (req, res) =>
