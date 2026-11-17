@@ -467,7 +467,7 @@ function setSelectValor(id, valor){
   }
 }
 
-function buscar(){
+function buscar(noBuscarArchivos){
   var dni=q("dniInp").value.trim();if(!dni)return;
   q("personaData").innerHTML="<div class='text-muted small'>Buscando...</div>";
   q("apellidoResult").innerHTML="";
@@ -479,7 +479,11 @@ function buscar(){
   }).catch(function(e){
     cur=null;
     q("estadoData").innerHTML="";q("botonesData").innerHTML="";q("previewBox").style.display="none";
-    buscarArchivosAnterior(dni);
+    if(noBuscarArchivos){
+      q("personaData").innerHTML="<div class='text-danger small'>No se pudieron cargar los datos de la credencial actual: "+htmlEsc(e.message)+"</div>";
+    }else{
+      buscarArchivosAnterior(dni);
+    }
   });
 }
 
@@ -613,7 +617,8 @@ function buscarApellidoEnArchivos(a){
 function elegirPersona(dni){
   q("dniInp").value=dni;
   q("apellidoResult").innerHTML="";
-  buscar();
+  buscar(true);
+  q("personaData").scrollIntoView({behavior:"smooth",block:"start"});
 }
 function mostrarPersona(p){
   var h="";
