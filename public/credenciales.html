@@ -793,7 +793,9 @@ function cargarLista(){
     var h="<div class='table-responsive'><table class='table table-sm align-middle mb-0'><thead><tr><th>Foto</th><th>Fecha</th><th>DNI</th><th>Nombre</th><th class='text-center'>Impresa</th><th class='text-center'>Entregada</th><th class='text-center'>Pagada</th><th class='text-center'>Sin Cargo</th><th class='text-center'>Baja</th><th>Vence</th></tr></thead><tbody>";
     list.forEach(function(c){
       var dniMini=String(c.dni||"").replace(/[^0-9.-]/g,"");
-      var foto="<div class='cred-thumb' data-dni='"+dniMini+"' aria-label='Foto de credencial'><i class='bi bi-person-fill'></i></div>";
+      var foto=c.foto_base64
+        ? "<div class='cred-thumb' aria-label='Foto de credencial'><img src='"+c.foto_base64+"' alt='Foto de la persona'></div>"
+        : "<div class='cred-thumb' data-dni='"+dniMini+"' aria-label='Foto de credencial'><i class='bi bi-person-fill'></i></div>";
       h+="<tr><td>"+foto+"</td><td class='small'>"+fmtFecha(c.fecha)+"</td><td class='small' style='cursor:pointer' title='Doble clic para abrir' ondblclick=\"elegirPersona('"+c.dni+"')\">"+c.dni+"</td><td>"+((c.apellido||"")+" "+(c.nombre||"")).trim()+"</td>"+
          "<td class='text-center'>"+chk(c.id,"impreso",c.impreso)+"</td>"+
          "<td class='text-center'>"+chk(c.id,"entregado",c.entregado)+"</td>"+
