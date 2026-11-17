@@ -148,15 +148,15 @@ body{background:var(--canvas);font-family:Inter,system-ui,-apple-system,"Segoe U
           <div class="col-md-4"><label class="form-label small mb-0">Tel&eacute;fono</label><input class="form-control form-control-sm" id="e_telefono"></div>
           <div class="col-md-4"><label class="form-label small mb-0">Celular</label><input class="form-control form-control-sm" id="e_celular"></div>
           <div class="col-md-4"><label class="form-label small mb-0">Direcci&oacute;n</label><input class="form-control form-control-sm" id="e_direccion"></div>
-          <div class="col-md-4"><label class="form-label small mb-0">Provincia</label><select class="form-select form-select-sm" id="e_id_provincia"><option value="">--</option></select></div>
-          <div class="col-md-4"><label class="form-label small mb-0">Localidad</label><input class="form-control form-control-sm" id="e_localidad"></div>
+          <div class="col-md-4"><label class="form-label small mb-0">Provincia</label><select class="form-select form-select-sm" id="e_id_provincia" onchange="cargarDatosProvinciaPersona()"><option value="">--</option></select></div>
+          <div class="col-md-4"><label class="form-label small mb-0">Localidad</label><select class="form-select form-select-sm" id="e_localidad" disabled><option value="">Elegí primero la provincia</option></select></div>
           <div class="col-md-4"><label class="form-label small mb-0">Barrio</label><input class="form-control form-control-sm" id="e_barrio"></div>
           <div class="col-md-4"><label class="form-label small mb-0">C&oacute;digo Postal</label><input class="form-control form-control-sm" id="e_codigo_postal"></div>
           <div class="col-md-4"><label class="form-label small mb-0">Estado Civil</label><select class="form-select form-select-sm" id="e_id_estado_civil"><option value="">--</option></select></div>
           <div class="col-md-4"><label class="form-label small mb-0">F. Bautismo</label><input type="date" class="form-control form-control-sm" id="e_fecha_bautismo"></div>
           <div class="col-md-4"><label class="form-label small mb-0">Ministerio</label><select class="form-select form-select-sm" id="e_ministerio"><option value="">--</option></select></div>
           <div class="col-md-4"><label class="form-label small mb-0">T&iacute;tulo Teol&oacute;gico</label><input class="form-control form-control-sm" id="e_titulo_teologico"></div>
-          <div class="col-md-4"><label class="form-label small mb-0">Pastor</label><input class="form-control form-control-sm" id="e_pastor"></div>
+          <div class="col-md-4"><label class="form-label small mb-0">Pastor</label><select class="form-select form-select-sm" id="e_pastor" disabled><option value="">Elegí primero la provincia</option></select></div>
           <div class="col-md-4"><label class="form-label small mb-0">C&oacute;nyuge</label><input class="form-control form-control-sm" id="e_conyuge"></div>
           <div class="col-md-4"><label class="form-label small mb-0">Vencimiento</label><input type="date" class="form-control form-control-sm" id="e_fecha_vencimiento"></div>
           <div class="col-md-4"><label class="form-label small mb-0">De baja</label><div class="form-check form-switch mt-1"><input class="form-check-input" type="checkbox" id="e_baja"><label class="form-check-label small" for="e_baja">Baja</label></div></div>
@@ -174,7 +174,7 @@ body{background:var(--canvas);font-family:Inter,system-ui,-apple-system,"Segoe U
 <div class="modal fade" id="ciudadesModal" tabindex="-1">
   <div class="modal-dialog modal-lg modal-dialog-centered">
     <div class="modal-content">
-      <div class="modal-header py-2"><h6 class="modal-title"><i class="bi bi-geo-alt me-1"></i>Localidades por provincia</h6><button class="btn-close" data-bs-dismiss="modal"></button></div>
+      <div class="modal-header py-2"><h6 class="modal-title"><i class="bi bi-geo-alt me-1"></i>Catálogos por provincia</h6><button class="btn-close" data-bs-dismiss="modal"></button></div>
       <div class="modal-body">
         <div class="row g-2 align-items-end mb-3">
           <div class="col-md-4"><label class="form-label small">Provincia</label><select id="locProvincia" class="form-select form-select-sm" onchange="cargarCatalogoCiudades()"><option value="">Elegí provincia</option></select></div>
@@ -184,6 +184,14 @@ body{background:var(--canvas);font-family:Inter,system-ui,-apple-system,"Segoe U
         </div>
         <div id="ciudadesCatalogoEstado" class="small text-muted mb-2"></div>
         <div class="table-responsive"><table class="table table-sm align-middle"><thead><tr><th>Código</th><th>Localidad</th><th>Código postal</th></tr></thead><tbody id="ciudadesCatalogoLista"><tr><td colspan="3" class="text-muted">Elegí una provincia</td></tr></tbody></table></div>
+        <hr class="my-3">
+        <h6 class="small fw-semibold">Pastores de la provincia seleccionada</h6>
+        <div class="row g-2 align-items-end mb-2">
+          <div class="col-md-9"><label class="form-label small">Nuevo pastor</label><input id="catPastorNombre" class="form-control form-control-sm" maxlength="200" placeholder="Nombre del pastor"></div>
+          <div class="col-md-3"><button class="btn btn-outline-primary btn-sm w-100" onclick="guardarPastorCatalogo()"><i class="bi bi-plus-lg me-1"></i>Agregar pastor</button></div>
+        </div>
+        <div id="pastoresCatalogoEstado" class="small text-muted mb-2"></div>
+        <div class="table-responsive"><table class="table table-sm align-middle"><thead><tr><th>Código</th><th>Pastor</th></tr></thead><tbody id="pastoresCatalogoLista"><tr><td colspan="2" class="text-muted">Elegí una provincia</td></tr></tbody></table></div>
       </div>
       <div class="modal-footer py-1"><button class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cerrar</button></div>
     </div>
@@ -352,6 +360,40 @@ function cargarProvincias(){
   }).catch(function(){});
 }
 
+var dependenciaPersonaSeq=0;
+function cargarDatosProvinciaPersona(idCiudad,idPastor,localidadActual,pastorActual){
+  var pid=q("e_id_provincia").value,seq=++dependenciaPersonaSeq;
+  var city=q("e_localidad"), pastor=q("e_pastor");
+  function vacio(sel,txt,legacyName){sel.innerHTML="<option value=''>"+txt+"</option>";if(legacyName){var opt=document.createElement("option");opt.value="";opt.textContent=legacyName+" (sin código asignado)";opt.dataset.name=legacyName;sel.appendChild(opt);sel.value="";sel.disabled=false;}else sel.disabled=true;}
+  function norm(s){return String(s||"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").trim();}
+  if(!pid){vacio(city,"Elegí una provincia",localidadActual);vacio(pastor,"Elegí una provincia",pastorActual);return;}
+  vacio(city,"Cargando localidades…");vacio(pastor,"Cargando pastores…");
+  api("/provincias/"+encodeURIComponent(pid)+"/ciudades").then(function(ciudades){
+    if(seq!==dependenciaPersonaSeq)return;
+    var opts="<option value=''>-- Seleccionar localidad --</option>";
+    (ciudades||[]).forEach(function(c){opts+="<option value='"+c.id_ciudad+"' data-name='"+htmlEsc(c.nombre)+"'>"+htmlEsc(c.nombre)+"</option>";});
+    city.innerHTML=opts;city.disabled=false;
+    var cityId=String(idCiudad||""),foundCity=false;
+    for(var i=0;i<city.options.length;i++){
+      if(cityId&&city.options[i].value===cityId){city.value=cityId;foundCity=true;break;}
+      if(!cityId&&localidadActual&&norm(city.options[i].dataset.name)===norm(localidadActual)){city.value=city.options[i].value;foundCity=true;break;}
+    }
+    if(!foundCity&&localidadActual){var legacy=document.createElement("option");legacy.value="";legacy.textContent=localidadActual+" (sin código asignado)";legacy.dataset.name=localidadActual;city.appendChild(legacy);city.value="";}
+    return api("/provincias/"+encodeURIComponent(pid)+"/pastores");
+  }).then(function(pastores){
+    if(seq!==dependenciaPersonaSeq||!pastores)return;
+    var opts="<option value=''>-- Seleccionar pastor --</option>";
+    pastores.forEach(function(p){opts+="<option value='"+p.id_pastor+"' data-name='"+htmlEsc(p.nombre)+"'>"+htmlEsc(p.nombre)+"</option>";});
+    pastor.innerHTML=opts;pastor.disabled=false;
+    var pastorId=String(idPastor||""),found=false;
+    for(var j=0;j<pastor.options.length;j++){
+      if(pastorId&&pastor.options[j].value===pastorId){pastor.value=pastorId;found=true;break;}
+      if(!pastorId&&pastorActual&&norm(pastor.options[j].dataset.name)===norm(pastorActual)){pastor.value=pastor.options[j].value;found=true;break;}
+    }
+    if(!found&&pastorActual){var legacy=document.createElement("option");legacy.value="";legacy.textContent=pastorActual+" (sin código asignado)";legacy.dataset.name=pastorActual;pastor.appendChild(legacy);pastor.value="";}
+  }).catch(function(e){if(seq===dependenciaPersonaSeq){vacio(city,"Error al cargar localidades");vacio(pastor,"Error al cargar pastores");}});
+}
+
 var EC=[{id:1,n:"Soltero"},{id:2,n:"Casado"},{id:3,n:"Casada"},{id:4,n:"Viudo"},{id:5,n:"Viuda"},{id:6,n:"Soltera"}];
   var MIN=["Pastor Presidente","Pastor","Evangelista","Anciano","Di\u00e1cono","Diaconisa","Colaborador","Misionero","Misionera"];
 function llenarCombos(){
@@ -370,14 +412,18 @@ function abrirCatalogoCiudades(){
 }
 function cargarCatalogoCiudades(){
   var provincia=q("locProvincia").value;
-  var body=q("ciudadesCatalogoLista");
-  q("ciudadesCatalogoEstado").textContent="";
-  if(!provincia){body.innerHTML="<tr><td colspan='3' class='text-muted'>Elegí una provincia</td></tr>";return;}
+  var body=q("ciudadesCatalogoLista"), past=q("pastoresCatalogoLista");
+  q("ciudadesCatalogoEstado").textContent="";q("pastoresCatalogoEstado").textContent="";
+  if(!provincia){body.innerHTML="<tr><td colspan='3' class='text-muted'>Elegí una provincia</td></tr>";past.innerHTML="<tr><td colspan='2' class='text-muted'>Elegí una provincia</td></tr>";return;}
   body.innerHTML="<tr><td colspan='3' class='text-muted'>Cargando localidades…</td></tr>";
   api("/provincias/"+encodeURIComponent(provincia)+"/ciudades").then(function(list){
-    if(!list||!list.length){body.innerHTML="<tr><td colspan='3' class='text-muted'>No hay localidades cargadas para esta provincia</td></tr>";return;}
-    body.innerHTML=list.map(function(c){return "<tr><td>"+htmlEsc(c.id_ciudad)+"</td><td>"+htmlEsc(c.nombre)+"</td><td>"+htmlEsc(c.codigo_postal||"")+"</td></tr>";}).join("");
-  }).catch(function(e){body.innerHTML="<tr><td colspan='3' class='text-danger'>"+htmlEsc(e.message)+"</td></tr>";});
+    body.innerHTML=list&&list.length?list.map(function(c){return "<tr><td>"+htmlEsc(c.id_ciudad)+"</td><td>"+htmlEsc(c.nombre)+"</td><td>"+htmlEsc(c.codigo_postal||"")+"</td></tr>";}).join(""):"<tr><td colspan='3' class='text-muted'>No hay localidades cargadas para esta provincia</td></tr>";
+    past.innerHTML="<tr><td colspan='2' class='text-muted'>Cargando pastores…</td></tr>";
+    return api("/provincias/"+encodeURIComponent(provincia)+"/pastores");
+  }).then(function(list){
+    if(!list)return;
+    past.innerHTML=list.length?list.map(function(p){return "<tr><td>"+htmlEsc(p.id_pastor)+"</td><td>"+htmlEsc(p.nombre)+"</td></tr>";}).join(""):"<tr><td colspan='2' class='text-muted'>No hay pastores cargados para esta provincia</td></tr>";
+  }).catch(function(e){q("ciudadesCatalogoEstado").textContent=e.message;});
 }
 function guardarCiudadCatalogo(){
   var idProv=parseInt(q("locProvincia").value,10)||0;
@@ -387,6 +433,16 @@ function guardarCiudadCatalogo(){
   api("/ciudades",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({id_provincia:idProv,nombre:nombre,codigo_postal:q("locCP").value.trim()})})
     .then(function(r){if(r&&r.error){q("ciudadesCatalogoEstado").textContent=r.error;return;}q("locNombre").value="";q("locCP").value="";q("ciudadesCatalogoEstado").textContent="Localidad agregada";cargarCatalogoCiudades();})
     .catch(function(e){q("ciudadesCatalogoEstado").textContent=e.message;});
+}
+
+function guardarPastorCatalogo(){
+  var idProv=parseInt(q("locProvincia").value,10)||0;
+  var nombre=q("catPastorNombre").value.trim();
+  if(!idProv){alert("Elegí la provincia");return;}
+  if(!nombre){alert("Ingresá el nombre del pastor");return;}
+  api("/pastores",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({id_provincia:idProv,nombre:nombre})})
+    .then(function(r){if(r&&r.error){q("pastoresCatalogoEstado").textContent=r.error;return;}q("catPastorNombre").value="";q("pastoresCatalogoEstado").textContent="Pastor agregado";cargarCatalogoCiudades();})
+    .catch(function(e){q("pastoresCatalogoEstado").textContent=e.message;});
 }
 
 function setSelectValor(id, valor){
@@ -976,14 +1032,13 @@ function abrirEditar(){
   q("e_celular").value=p.celular||"";
   q("e_direccion").value=p.direccion||"";
   q("e_id_provincia").value=p.id_provincia?String(p.id_provincia):"";
-  q("e_localidad").value=p.localidad||"";
+  cargarDatosProvinciaPersona(p.id_ciudad,p.id_pastor,p.localidad,p.pastor);
   q("e_barrio").value=p.barrio||"";
   q("e_codigo_postal").value=p.codigo_postal||"";
   q("e_id_estado_civil").value=p.id_estado_civil?String(p.id_estado_civil):"";
   q("e_fecha_bautismo").value=p.fecha_bautismo||"";
   setSelectValor("e_ministerio", p.ministerio);
   q("e_titulo_teologico").value=p.titulo_teologico||"";
-  q("e_pastor").value=p.pastor||"";
   q("e_conyuge").value=p.conyuge||"";
   api("/credenciales/estado/"+p.dni).then(function(e){
     q("e_baja").checked=e.baja==="true";
@@ -1004,32 +1059,33 @@ function nuevaPersona(){
   q("e_celular").value="";
   q("e_direccion").value="";
   q("e_id_provincia").value="";
-  q("e_localidad").value="";
+  cargarDatosProvinciaPersona();
   q("e_barrio").value="";
   q("e_codigo_postal").value="";
   q("e_id_estado_civil").value="";
   q("e_fecha_bautismo").value="";
   q("e_ministerio").value="";
   q("e_titulo_teologico").value="";
-  q("e_pastor").value="";
   q("e_conyuge").value="";
   q("e_baja").checked=false;
   q("e_fecha_vencimiento").value="";
   new bootstrap.Modal(q("editModal")).show();
 }
+function nombreSeleccionado(id){var s=q(id),o=s&&s.selectedOptions?s.selectedOptions[0]:null;return o?(o.dataset.name||(o.value?o.textContent:"")||"").trim():"";}
 function guardarDatos(){
   var dni=modoNuevo?q("e_dni").value.trim():(cur?cur.dni:"");
   if(!dni){alert("Ingrese DNI");return;}
   if(!q("e_apellido").value.trim()||!q("e_nombre").value.trim()){alert("Apellido y nombre son requeridos");return;}
+  if(q("e_id_provincia").value&&(q("e_localidad").disabled||q("e_pastor").disabled)){alert("Esperá a que terminen de cargar localidades y pastores");return;}
   var data={
     apellido:q("e_apellido").value.trim(),nombre:q("e_nombre").value.trim(),
     fecha_nacimiento:q("e_fecha_nacimiento").value,lugar_nacimiento:q("e_lugar_nacimiento").value.trim(),
     email:q("e_email").value.trim(),telefono:q("e_telefono").value.trim(),celular:q("e_celular").value.trim(),
     direccion:q("e_direccion").value.trim(),id_provincia:parseInt(q("e_id_provincia").value)||0,
-    localidad:q("e_localidad").value.trim(),barrio:q("e_barrio").value.trim(),codigo_postal:q("e_codigo_postal").value.trim(),
+    id_ciudad:parseInt(q("e_localidad").value,10)||0,localidad:nombreSeleccionado("e_localidad"),barrio:q("e_barrio").value.trim(),codigo_postal:q("e_codigo_postal").value.trim(),
     id_estado_civil:parseInt(q("e_id_estado_civil").value)||0,fecha_bautismo:q("e_fecha_bautismo").value,
     ministerio:q("e_ministerio").value,titulo_teologico:q("e_titulo_teologico").value.trim(),
-    pastor:q("e_pastor").value.trim(),conyuge:q("e_conyuge").value.trim(),
+    id_pastor:parseInt(q("e_pastor").value,10)||0,pastor:nombreSeleccionado("e_pastor"),conyuge:q("e_conyuge").value.trim(),
     baja:q("e_baja").checked?"S":"N",fecha_vencimiento:q("e_fecha_vencimiento").value
   };
   api("/credenciales/persona/"+dni,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify(data)})
