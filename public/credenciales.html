@@ -30,6 +30,8 @@ body{background:var(--canvas);font-family:Inter,system-ui,-apple-system,"Segoe U
 .badge-status{font-size:.76rem;padding:.45em .7em}
 .photo{width:110px;height:135px;object-fit:cover;border-radius:10px;border:2px solid #e2e8f0}
 #listaData table{min-width:900px}
+.cred-thumb{width:42px;height:54px;border:1px solid #dbe3ec;border-radius:6px;background:#f8fafc;display:flex;align-items:center;justify-content:center;color:#94a3b8;overflow:hidden}
+.cred-thumb img{width:100%;height:100%;object-fit:cover}
 #listaData th{font-size:.72rem;color:#64748b;text-transform:uppercase;letter-spacing:.045em;white-space:nowrap}
 #listaData td{vertical-align:middle}
 #listaData tbody tr:hover{background:#f8fafc}
@@ -787,9 +789,12 @@ function cargarLista(){
   api(url).then(function(list){
     if(!list||!list.length){q("listaData").innerHTML="<div class='text-muted small'>Sin credenciales para esta fecha</div>";q("listaInfo").textContent="";return;}
     q("listaInfo").textContent=list.length+" credencial(es)";
-    var h="<div class='table-responsive'><table class='table table-sm align-middle mb-0'><thead><tr><th>Fecha</th><th>DNI</th><th>Nombre</th><th class='text-center'>Impresa</th><th class='text-center'>Entregada</th><th class='text-center'>Pagada</th><th class='text-center'>Sin Cargo</th><th class='text-center'>Baja</th><th>Vence</th></tr></thead><tbody>";
+    if(miniaturaObserver)miniaturaObserver.disconnect();
+    var h="<div class='table-responsive'><table class='table table-sm align-middle mb-0'><thead><tr><th>Foto</th><th>Fecha</th><th>DNI</th><th>Nombre</th><th class='text-center'>Impresa</th><th class='text-center'>Entregada</th><th class='text-center'>Pagada</th><th class='text-center'>Sin Cargo</th><th class='text-center'>Baja</th><th>Vence</th></tr></thead><tbody>";
     list.forEach(function(c){
-      h+="<tr><td class='small'>"+fmtFecha(c.fecha)+"</td><td class='small' style='cursor:pointer' title='Doble clic para abrir' ondblclick=\"elegirPersona('"+c.dni+"')\">"+c.dni+"</td><td>"+((c.apellido||"")+" "+(c.nombre||"")).trim()+"</td>"+
+      var dniMini=String(c.dni||"").replace(/[^0-9.-]/g,"");
+      var foto="<div class='cred-thumb' data-dni='"+dniMini+"' aria-label='Foto de credencial'><i class='bi bi-person-fill'></i></div>";
+      h+="<tr><td>"+foto+"</td><td class='small'>"+fmtFecha(c.fecha)+"</td><td class='small' style='cursor:pointer' title='Doble clic para abrir' ondblclick=\"elegirPersona('"+c.dni+"')\">"+c.dni+"</td><td>"+((c.apellido||"")+" "+(c.nombre||"")).trim()+"</td>"+
          "<td class='text-center'>"+chk(c.id,"impreso",c.impreso)+"</td>"+
          "<td class='text-center'>"+chk(c.id,"entregado",c.entregado)+"</td>"+
          "<td class='text-center'>"+chk(c.id,"pagado",c.pagado)+"</td>"+
@@ -799,7 +804,38 @@ function cargarLista(){
     });
     h+="</tbody></table></div>";
     q("listaData").innerHTML=h;
+     observarMiniaturas();
   }).catch(function(e){q("listaData").innerHTML="<div class='text-danger small'>"+e.message+"</div>";});
+}
+var miniaturasCache=Object.create(null),miniaturaObserver=null;
+function cargarMiniatura(el){
+  var dni=el.dataset.dni;
+  if(!dni)return;
+  if(Object.prototype.hasOwnProperty.call(miniaturasCache,dni)){
+    if(miniaturasCache[dni])mostrarMiniatura(el,miniaturasCache[dni]);
+    return;
+  }
+  miniaturasCache[dni]=null;
+  api("/credenciales/foto-mini/"+encodeURIComponent(dni)).then(function(r){
+    miniaturasCache[dni]=r&&r.foto_base64?r.foto_base64:"";
+    if(miniaturasCache[dni])mostrarMiniatura(el,miniaturasCache[dni]);
+  }).catch(function(){miniaturasCache[dni]="";});
+}
+function mostrarMiniatura(el,src){
+  var img=document.createElement("img");
+  img.src=src;img.alt="Foto de la persona";img.loading="lazy";
+  el.textContent="";el.appendChild(img);
+}
+function observarMiniaturas(){
+  var celdas=document.querySelectorAll(".cred-thumb[data-dni]");
+  if(miniaturaObserver)miniaturaObserver.disconnect();
+  if(!("IntersectionObserver" in window)){celdas.forEach(cargarMiniatura);return;}
+  miniaturaObserver=new IntersectionObserver(function(entries){
+    entries.forEach(function(entry){
+      if(entry.isIntersecting){miniaturaObserver.unobserve(entry.target);cargarMiniatura(entry.target);}
+    });
+  },{rootMargin:"140px 0px",threshold:0.01});
+  celdas.forEach(function(el){miniaturaObserver.observe(el);});
 }
 function chk(id,campo,val){
   return "<input type='checkbox' class='form-check-input' "+(val==="S"?"checked":"")+" onchange=\"setRegistro("+id+",'"+campo+"',this.checked)\">";
