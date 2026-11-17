@@ -809,19 +809,33 @@ function cargarLista(){
      observarMiniaturas();
   }).catch(function(e){q("listaData").innerHTML="<div class='text-danger small'>"+e.message+"</div>";});
 }
-var miniaturasCache=Object.create(null),miniaturaObserver=null;
+var miniaturasCache=Object.create(null),miniaturaObserver=null,miniaturaCola=[],miniaturaActiva=false;
 function cargarMiniatura(el){
   var dni=el.dataset.dni;
   if(!dni)return;
   if(Object.prototype.hasOwnProperty.call(miniaturasCache,dni)){
     if(miniaturasCache[dni])mostrarMiniatura(el,miniaturasCache[dni]);
+    else if(miniaturasCache[dni]===null)miniaturaCola.push(el);
     return;
   }
+  miniaturaCola.push(el);
+  procesarMiniatura();
+}
+function procesarMiniatura(){
+  if(miniaturaActiva||!miniaturaCola.length)return;
+  var el=miniaturaCola.shift(),dni=el&&el.dataset.dni;
+  if(!el||!el.isConnected||!dni){procesarMiniatura();return;}
+  if(Object.prototype.hasOwnProperty.call(miniaturasCache,dni)){
+    if(miniaturasCache[dni])mostrarMiniatura(el,miniaturasCache[dni]);
+    procesarMiniatura();return;
+  }
+  miniaturaActiva=true;
   miniaturasCache[dni]=null;
   api("/personas/dni/"+encodeURIComponent(dni)).then(function(r){
     miniaturasCache[dni]=r&&r.foto_base64?r.foto_base64:"";
-    if(miniaturasCache[dni])mostrarMiniatura(el,miniaturasCache[dni]);
-  }).catch(function(){miniaturasCache[dni]="";});
+    if(miniaturasCache[dni]&&el.isConnected)mostrarMiniatura(el,miniaturasCache[dni]);
+  }).catch(function(){miniaturasCache[dni]="";})
+    .finally(function(){miniaturaActiva=false;window.setTimeout(procesarMiniatura,180);});
 }
 function mostrarMiniatura(el,src){
   var img=document.createElement("img");
@@ -836,7 +850,7 @@ function observarMiniaturas(){
     entries.forEach(function(entry){
       if(entry.isIntersecting){miniaturaObserver.unobserve(entry.target);cargarMiniatura(entry.target);}
     });
-  },{rootMargin:"140px 0px",threshold:0.01});
+  },{rootMargin:"0px",threshold:0.1});
   celdas.forEach(function(el){miniaturaObserver.observe(el);});
 }
 function chk(id,campo,val){
