@@ -818,7 +818,7 @@ function cargarMiniatura(el){
     return;
   }
   miniaturasCache[dni]=null;
-  api("/credenciales/foto-mini/"+encodeURIComponent(dni)).then(function(r){
+  api("/personas/dni/"+encodeURIComponent(dni)).then(function(r){
     miniaturasCache[dni]=r&&r.foto_base64?r.foto_base64:"";
     if(miniaturasCache[dni])mostrarMiniatura(el,miniaturasCache[dni]);
   }).catch(function(){miniaturasCache[dni]="";});
