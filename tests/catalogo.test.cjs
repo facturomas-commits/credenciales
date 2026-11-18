@@ -14,7 +14,7 @@ function setup(handler){
     return elements.get(id);
   }
   const calls=[];
-  const ctx=vm.createContext({q,cur:null,mostrarPersona(){},cargarProvincias(){},bootstrap:{Modal:{getOrCreateInstance(){return{show(){}};}}},api(p,o){calls.push({p,o});return handler?handler(p,o):Promise.resolve([]);}});
+  const ctx=vm.createContext({q,cur:null,confirm(){return false;},mostrarPersona(){},cargarProvincias(){},bootstrap:{Modal:{getOrCreateInstance(){return{show(){}};}}},api(p,o){calls.push({p,o});return handler?handler(p,o):Promise.resolve([]);}});
   vm.runInContext(source,ctx);
   q('locProvincia').value='6';
   return{ctx,q,calls};
@@ -78,6 +78,7 @@ test('loading escapes catalog names and renders edit buttons',async()=>{
   assert.match(s.q('ciudadesCatalogoLista').innerHTML,/editarCiudadCatalogo\(42\)/);
   assert.match(s.q('pastoresCatalogoLista').innerHTML,/editarPastorCatalogo\(81\)/);
   assert.doesNotMatch(s.q('ciudadesCatalogoLista').innerHTML,/<img/);assert.match(s.q('pastoresCatalogoLista').innerHTML,/O&#39;Neil/);
+  s.ctx.abrirUnificacionPastor(81);assert.doesNotMatch(s.q('unificarPastorDestino').innerHTML,/<img/);
 });
 test('save is single-flight and failure keeps edit data',async()=>{
   const pending=deferred();const s=setup(()=>pending.promise);s.ctx.ciudadEdicion=42;s.q('locNombre').value='Nombre';s.q('locCP').value='3500';
@@ -91,4 +92,53 @@ test('successful rename updates only the linked person in current view',async()=
   await s.ctx.guardarCiudadCatalogo();assert.equal(s.ctx.cur.localidad,'Después');
   s.ctx.cur={id_provincia:6,id_ciudad:0,localidad:'No vinculado'};s.q('locNombre').value='Nueva';
   await s.ctx.guardarCiudadCatalogo();assert.equal(s.ctx.cur.localidad,'No vinculado');
+});
+
+test('duplicate rename opens review with existing destination and sends no automatic mutation',async()=>{
+  const s=setup();s.ctx.catalogoPastores=[{id_pastor:57,nombre:'Monzon Daniel',personas_vinculadas:1},{id_pastor:58,nombre:'Monzon Jose Daniel',personas_vinculadas:1}];
+  s.ctx.editarPastorCatalogo(57);s.q('catPastorNombre').value='  MONZON JOSE DANIEL  ';
+  await s.ctx.guardarPastorCatalogo();
+  assert.equal(s.calls.length,0);assert.equal(s.ctx.pastorUnificarOrigen,57);assert.equal(s.q('unificarPastorDestino').value,'58');
+  assert.equal(s.q('unificarPastorPanel').style.display,'');assert.match(s.q('pastoresCatalogoEstado').textContent,/todavía no/);
+});
+test('merge requires explicit choice and native confirmation',async()=>{
+  const s=setup();s.ctx.catalogoPastores=[{id_pastor:57,nombre:'Monzon Daniel',personas_vinculadas:1},{id_pastor:58,nombre:'Monzon Jose Daniel',personas_vinculadas:1}];
+  s.ctx.abrirUnificacionPastor(57);assert.equal(s.q('unificarPastorDestino').value,'');
+  await s.ctx.confirmarUnificacionPastor();assert.equal(s.calls.length,0);
+  s.q('unificarPastorDestino').value='58';let prompt='';s.ctx.confirm=t=>{prompt=t;return false;};
+  await s.ctx.confirmarUnificacionPastor();assert.equal(s.calls.length,0);assert.match(prompt,/Monzon Daniel \(código 57\)/);assert.match(prompt,/Monzon Jose Daniel \(código 58\)/);assert.match(prompt,/1 persona/);
+});
+test('confirmed merge posts source and destination ids and updates current person',async()=>{
+  const s=setup((p,o)=>Promise.resolve(o?{id_origen:57,id_destino:58,nombre_destino:'Monzon Jose Daniel',personas_reasignadas:1}:[]));
+  s.ctx.catalogoPastores=[{id_pastor:57,nombre:'Monzon Daniel',personas_vinculadas:1},{id_pastor:58,nombre:'Monzon Jose Daniel',personas_vinculadas:1}];
+  s.ctx.cur={id_pastor:57,pastor:'Monzon Daniel'};s.ctx.confirm=()=>true;
+  s.ctx.abrirUnificacionPastor(57);s.q('unificarPastorDestino').value='58';
+  await s.ctx.confirmarUnificacionPastor();
+  assert.equal(s.calls[0].p,'/pastores/57/unificar');assert.equal(s.calls[0].o.method,'POST');assert.deepEqual(JSON.parse(s.calls[0].o.body),{id_destino:58});
+  assert.equal(s.ctx.cur.id_pastor,58);assert.equal(s.ctx.cur.pastor,'Monzon Jose Daniel');assert.equal(s.ctx.pastorUnificarOrigen,0);
+  assert.match(s.q('pastoresCatalogoEstado').textContent,/Personas reasignadas: 1/);
+});
+test('failed merge preserves selection and source state and allows retry',async()=>{
+  const s=setup(()=>Promise.reject(new Error('No pertenecen a la misma provincia')));s.ctx.catalogoPastores=[{id_pastor:57,nombre:'Origen'},{id_pastor:58,nombre:'Destino'}];
+  s.ctx.confirm=()=>true;s.ctx.abrirUnificacionPastor(57);s.q('unificarPastorDestino').value='58';
+  await s.ctx.confirmarUnificacionPastor();
+  assert.equal(s.ctx.pastorUnificarOrigen,57);assert.equal(s.q('unificarPastorDestino').value,'58');assert.equal(s.ctx.catalogoGuardando,false);
+  assert.match(s.q('pastoresCatalogoEstado').textContent,/No pertenecen/);
+});
+test('filter supports names in different order, but never merges them',()=>{
+  const s=setup();s.ctx.catalogoPastores=[{id_pastor:25,nombre:'Daniel Monzon',personas_vinculadas:14},{id_pastor:57,nombre:'Monzon Daniel',personas_vinculadas:1},{id_pastor:58,nombre:'Monzon Jose Daniel',personas_vinculadas:1},{id_pastor:99,nombre:'Otro Pastor',personas_vinculadas:2}];
+  s.q('catPastorFiltro').value='Monzon Daniel';s.ctx.renderPastoresCatalogo();
+  const rows=s.q('pastoresCatalogoLista').innerHTML;assert.match(rows,/Daniel Monzon/);assert.match(rows,/Monzon Jose Daniel/);assert.doesNotMatch(rows,/Otro Pastor/);assert.match(rows,/abrirUnificacionPastor\(25\)/);assert.match(rows,/>14<\/td>/);assert.equal(s.calls.length,0);
+});
+test('merge refuses self target and concurrent duplicate submission',async()=>{
+  const pending=deferred();const s=setup((p,o)=>o?pending.promise:Promise.resolve([]));
+  s.ctx.catalogoPastores=[{id_pastor:57,nombre:'Origen'},{id_pastor:58,nombre:'Destino'}];s.ctx.confirm=()=>true;s.ctx.abrirUnificacionPastor(57);
+  s.q('unificarPastorDestino').value='57';await s.ctx.confirmarUnificacionPastor();assert.equal(s.calls.length,0);
+  s.q('unificarPastorDestino').value='58';const work=s.ctx.confirmarUnificacionPastor();s.ctx.confirmarUnificacionPastor();assert.equal(s.calls.length,1);
+  pending.resolve({id_origen:57,id_destino:58,nombre_destino:'Destino',personas_reasignadas:0});await work;
+});
+test('province changes cancel merge review',async()=>{
+  const s=setup();s.ctx.pastorUnificarOrigen=57;s.q('unificarPastorPanel').style.display='';s.q('unificarPastorDestino').value='58';s.q('locProvincia').value='9';
+  await s.ctx.cambiarProvinciaCatalogo();
+  assert.equal(s.ctx.pastorUnificarOrigen,0);assert.equal(s.q('unificarPastorDestino').value,'');assert.equal(s.q('unificarPastorPanel').style.display,'none');
 });

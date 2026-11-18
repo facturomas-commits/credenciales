@@ -196,7 +196,16 @@ body{background:var(--canvas);font-family:Inter,system-ui,-apple-system,"Segoe U
         </div>
         <button id="catPastorCancelar" class="btn btn-link btn-sm px-0 mb-2" style="display:none" onclick="cancelarEdicionPastor()">Cancelar edición</button>
         <div id="pastoresCatalogoEstado" class="small text-muted mb-2" role="status"></div>
-        <div class="table-responsive" style="max-height:230px"><table class="table table-sm align-middle"><thead><tr><th>Código</th><th>Pastor</th><th>Acciones</th></tr></thead><tbody id="pastoresCatalogoLista"><tr><td colspan="3" class="text-muted">Elegí una provincia</td></tr></tbody></table></div>
+        <div id="unificarPastorPanel" class="border border-warning rounded p-3 mb-3 bg-light" style="display:none">
+          <h6 class="small fw-semibold">Unificar un pastor duplicado</h6>
+          <p class="small mb-2">Duplicado: <strong id="unificarPastorOrigen"></strong></p>
+          <label class="form-label small" for="unificarPastorDestino">Conservar este pastor (nombre y código definitivos)</label>
+          <select id="unificarPastorDestino" class="form-select form-select-sm mb-2"><option value="">Elegí el registro correcto</option></select>
+          <p class="small text-muted mb-2">Las personas del duplicado pasarán al registro elegido. El duplicado quedará inactivo; no se elimina ninguna persona. Unificá solo si confirmás que es el mismo pastor.</p>
+          <div class="d-flex flex-wrap gap-2"><button class="btn btn-warning btn-sm" onclick="confirmarUnificacionPastor()">Confirmar unificación…</button><button class="btn btn-outline-secondary btn-sm" onclick="cancelarUnificacionPastor()">Cancelar</button></div>
+        </div>
+        <input id="catPastorFiltro" class="form-control form-control-sm mb-2" placeholder="Filtrar pastores por nombre o código" aria-label="Filtrar pastores" oninput="renderPastoresCatalogo()">
+        <div class="table-responsive" style="max-height:270px"><table class="table table-sm align-middle"><thead><tr><th>Código</th><th>Pastor</th><th>Personas</th><th>Acciones</th></tr></thead><tbody id="pastoresCatalogoLista"><tr><td colspan="4" class="text-muted">Elegí una provincia</td></tr></tbody></table></div>
       </div>
       <div class="modal-footer py-1"><button class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cerrar</button></div>
     </div>
@@ -411,7 +420,7 @@ function llenarCombos(){
 }
 function htmlEsc(s){return String(s==null?"":s).replace(/[&<>\"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];});}
 var catalogoCiudades=[],catalogoPastores=[],catalogoSeq=0,catalogoGuardando=false;
-var ciudadEdicion=0,pastorEdicion=0;
+var ciudadEdicion=0,pastorEdicion=0,pastorUnificarOrigen=0;
 function abrirCatalogoCiudades(){
   bootstrap.Modal.getOrCreateInstance(q("ciudadesModal")).show();
   if(q("locProvincia").options.length<2)cargarProvincias();
@@ -429,7 +438,8 @@ function cancelarEdicionPastor(){
 }
 function cambiarProvinciaCatalogo(){
   if(catalogoGuardando)return;
-  cancelarEdicionCiudad();cancelarEdicionPastor();
+  cancelarEdicionCiudad();cancelarEdicionPastor();cancelarUnificacionPastor();
+  q("catPastorFiltro").value="";
   q("ciudadesCatalogoEstado").textContent="";q("pastoresCatalogoEstado").textContent="";
   return cargarCatalogoCiudades();
 }
@@ -452,10 +462,11 @@ function editarPastorCatalogo(id){
 function cargarCatalogoCiudades(){
   var provincia=q("locProvincia").value,seq=++catalogoSeq;
   var body=q("ciudadesCatalogoLista"),past=q("pastoresCatalogoLista");
+  if(!catalogoGuardando)cancelarUnificacionPastor();
   catalogoCiudades=[];catalogoPastores=[];
-  if(!provincia){body.innerHTML="<tr><td colspan='4' class='text-muted'>Elegí una provincia</td></tr>";past.innerHTML="<tr><td colspan='3' class='text-muted'>Elegí una provincia</td></tr>";return Promise.resolve();}
+  if(!provincia){body.innerHTML="<tr><td colspan='4' class='text-muted'>Elegí una provincia</td></tr>";past.innerHTML="<tr><td colspan='4' class='text-muted'>Elegí una provincia</td></tr>";return Promise.resolve();}
   body.innerHTML="<tr><td colspan='4' class='text-muted'>Cargando localidades…</td></tr>";
-  past.innerHTML="<tr><td colspan='3' class='text-muted'>Cargando pastores…</td></tr>";
+  past.innerHTML="<tr><td colspan='4' class='text-muted'>Cargando pastores…</td></tr>";
   return api("/provincias/"+encodeURIComponent(provincia)+"/ciudades").then(function(list){
     if(seq!==catalogoSeq)return;
     if(!Array.isArray(list))throw new Error("Respuesta de localidades no válida");
@@ -468,9 +479,53 @@ function cargarCatalogoCiudades(){
       if(seq!==catalogoSeq)return;
       if(!Array.isArray(list))throw new Error("Respuesta de pastores no válida");
       catalogoPastores=list;
-      past.innerHTML=list.length?list.map(function(p){var id=parseInt(p.id_pastor,10)||0;return "<tr><td>"+id+"</td><td>"+htmlEsc(p.nombre)+"</td><td><button class='btn btn-outline-primary btn-sm' onclick='editarPastorCatalogo("+id+")' aria-label='Editar pastor "+htmlEsc(p.nombre)+"'><i class='bi bi-pencil me-1'></i>Editar</button></td></tr>";}).join(""):"<tr><td colspan='3' class='text-muted'>No hay pastores cargados para esta provincia</td></tr>";
-    }).catch(function(e){if(seq===catalogoSeq){past.innerHTML="<tr><td colspan='3' class='text-danger'>No se pudieron cargar los pastores</td></tr>";q("pastoresCatalogoEstado").textContent=e.message;}});
+      renderPastoresCatalogo();
+    }).catch(function(e){if(seq===catalogoSeq){past.innerHTML="<tr><td colspan='4' class='text-danger'>No se pudieron cargar los pastores</td></tr>";q("pastoresCatalogoEstado").textContent=e.message;}});
   });
+}
+function normalizarFiltroPastor(s){return String(s||"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").trim();}
+function renderPastoresCatalogo(){
+  var partes=normalizarFiltroPastor(q("catPastorFiltro").value).split(/\s+/).filter(Boolean);
+  var list=catalogoPastores.filter(function(p){var texto=normalizarFiltroPastor(p.nombre+" "+p.id_pastor);return partes.every(function(t){return texto.indexOf(t)>=0;});});
+  q("pastoresCatalogoLista").innerHTML=list.length?list.map(function(p){
+    var id=parseInt(p.id_pastor,10)||0;
+    var cantidad=p.personas_vinculadas==null?"—":String(parseInt(p.personas_vinculadas,10)||0);
+    return "<tr><td>"+id+"</td><td>"+htmlEsc(p.nombre)+"</td><td>"+cantidad+"</td><td><div class='d-flex gap-1'><button class='btn btn-outline-primary btn-sm' onclick='editarPastorCatalogo("+id+")' aria-label='Editar pastor "+htmlEsc(p.nombre)+"'>Editar</button><button class='btn btn-outline-secondary btn-sm' onclick='abrirUnificacionPastor("+id+")' aria-label='Unificar duplicado "+htmlEsc(p.nombre)+"'>Unificar</button></div></td></tr>";
+  }).join(""):"<tr><td colspan='4' class='text-muted'>"+(catalogoPastores.length?"Sin coincidencias":"No hay pastores cargados para esta provincia")+"</td></tr>";
+}
+function cancelarUnificacionPastor(){
+  if(catalogoGuardando)return;
+  pastorUnificarOrigen=0;q("unificarPastorPanel").style.display="none";
+  q("unificarPastorDestino").innerHTML="<option value=''>Elegí el registro correcto</option>";q("unificarPastorDestino").value="";
+}
+function abrirUnificacionPastor(id){
+  if(catalogoGuardando)return;
+  var origen=catalogoPastores.find(function(p){return Number(p.id_pastor)===Number(id);});if(!origen)return;
+  pastorUnificarOrigen=Number(origen.id_pastor);
+  q("unificarPastorOrigen").textContent=origen.nombre+" · código "+pastorUnificarOrigen+(origen.personas_vinculadas==null?"":" · "+origen.personas_vinculadas+" persona(s)");
+  q("unificarPastorDestino").innerHTML="<option value=''>Elegí el registro correcto</option>"+catalogoPastores.filter(function(p){return Number(p.id_pastor)!==pastorUnificarOrigen;}).map(function(p){var id=parseInt(p.id_pastor,10)||0;return "<option value='"+id+"'>"+htmlEsc(p.nombre)+" · código "+id+(p.personas_vinculadas==null?"":" · "+(parseInt(p.personas_vinculadas,10)||0)+" persona(s)")+"</option>";}).join("");
+  q("unificarPastorDestino").value="";q("unificarPastorPanel").style.display="";
+  q("pastoresCatalogoEstado").textContent="Elegí cuál es el registro definitivo. No se unifica por parecido de nombres.";
+  q("unificarPastorDestino").focus();
+}
+function confirmarUnificacionPastor(){
+  if(catalogoGuardando)return;
+  var idOrigen=pastorUnificarOrigen,idDestino=parseInt(q("unificarPastorDestino").value,10)||0;
+  var origen=catalogoPastores.find(function(p){return Number(p.id_pastor)===idOrigen;});
+  var destino=catalogoPastores.find(function(p){return Number(p.id_pastor)===idDestino;});
+  var estado=q("pastoresCatalogoEstado");
+  if(!origen||!destino||idOrigen===idDestino){estado.textContent="Elegí otro pastor de esta provincia como registro definitivo";return;}
+  var cantidad=origen.personas_vinculadas==null?"Las personas vinculadas":String(parseInt(origen.personas_vinculadas,10)||0)+" persona(s) vinculada(s)";
+  if(!confirm("¿Confirmás que son el mismo pastor?\n\nDuplicado: "+origen.nombre+" (código "+idOrigen+")\nConservar: "+destino.nombre+" (código "+idDestino+")\n\n"+cantidad+" pasarán al registro definitivo. El duplicado quedará inactivo. No se eliminan personas."))return;
+  ++catalogoSeq;bloquearCatalogo(true);estado.textContent="Unificando pastores…";
+  return api("/pastores/"+idOrigen+"/unificar",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({id_destino:idDestino})}).then(function(r){
+    if(!r||r.error)throw new Error(r&&r.error?r.error:"Respuesta de unificación no válida");
+    bloquearCatalogo(false);cancelarUnificacionPastor();
+    if(pastorEdicion===idOrigen||pastorEdicion===idDestino)cancelarEdicionPastor();
+    if(cur&&Number(cur.id_pastor)===idOrigen){cur.id_pastor=idDestino;cur.pastor=r.nombre_destino||destino.nombre;mostrarPersona(cur);}
+    estado.textContent="Unificación completada: se conserva "+(r.nombre_destino||destino.nombre)+" (código "+idDestino+"). Personas reasignadas: "+(parseInt(r.personas_reasignadas,10)||0)+".";
+    return cargarCatalogoCiudades();
+  }).catch(function(e){bloquearCatalogo(false);estado.textContent="No se unificaron los pastores: "+e.message;});
 }
 function bloquearCatalogo(bloquear){
   catalogoGuardando=bloquear;
@@ -487,6 +542,14 @@ function guardarCatalogo(tipo){
   if(!idProv){estado.textContent="Elegí la provincia";return;}
   if(!nombre){estado.textContent=ciudad?"Ingresá el nombre de la localidad":"Ingresá el nombre del pastor";return;}
   if(nombre.length>(ciudad?100:200)){estado.textContent="El nombre es demasiado largo";return;}
+  if(!ciudad&&id){
+    var existente=catalogoPastores.find(function(p){return Number(p.id_pastor)!==id&&String(p.nombre||"").trim().toUpperCase()===nombre.toUpperCase();});
+    if(existente){
+      abrirUnificacionPastor(id);q("unificarPastorDestino").value=String(existente.id_pastor);
+      estado.textContent="Ese nombre ya existe (código "+existente.id_pastor+"). Si es el mismo pastor, revisá y confirmá la unificación; todavía no se guardó ningún cambio.";
+      return;
+    }
+  }
   var data={id_provincia:idProv,nombre:nombre};
   if(ciudad)data.codigo_postal=q("locCP").value.trim();
   if(ciudad&&data.codigo_postal.length>20){estado.textContent="El código postal es demasiado largo";return;}
