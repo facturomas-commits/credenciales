@@ -69,7 +69,7 @@ body{background:var(--canvas);font-family:Inter,system-ui,-apple-system,"Segoe U
       <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 px-1">
         <div><div class="fw-semibold small">Datos principales</div><div class="text-muted small">Alta y actualización de personas</div></div>
         <div class="d-flex gap-2">
-          <button class="btn btn-outline-primary btn-sm" onclick="abrirCatalogoCiudades()"><i class="bi bi-geo-alt me-1"></i>Localidades</button>
+          <button class="btn btn-outline-primary btn-sm" onclick="abrirCatalogoCiudades()"><i class="bi bi-pencil-square me-1"></i>Localidades y pastores</button>
           <button class="btn btn-success btn-sm" onclick="nuevaPersona()"><i class="bi bi-person-plus me-1"></i>Nueva persona</button>
         </div>
       </div>
@@ -172,26 +172,31 @@ body{background:var(--canvas);font-family:Inter,system-ui,-apple-system,"Segoe U
 
 <!-- Modal de mantenimiento de localidades por provincia -->
 <div class="modal fade" id="ciudadesModal" tabindex="-1">
-  <div class="modal-dialog modal-lg modal-dialog-centered">
+  <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
     <div class="modal-content">
-      <div class="modal-header py-2"><h6 class="modal-title"><i class="bi bi-geo-alt me-1"></i>Catálogos por provincia</h6><button class="btn-close" data-bs-dismiss="modal"></button></div>
+      <div class="modal-header py-2"><h6 class="modal-title"><i class="bi bi-geo-alt me-1"></i>Localidades y pastores por provincia</h6><button class="btn-close" data-bs-dismiss="modal"></button></div>
       <div class="modal-body">
-        <div class="row g-2 align-items-end mb-3">
-          <div class="col-md-4"><label class="form-label small">Provincia</label><select id="locProvincia" class="form-select form-select-sm" onchange="cargarCatalogoCiudades()"><option value="">Elegí provincia</option></select></div>
-          <div class="col-md-4"><label class="form-label small">Nueva localidad</label><input id="locNombre" class="form-control form-control-sm" maxlength="100" placeholder="Nombre de la ciudad"></div>
-          <div class="col-md-2"><label class="form-label small">Cód. postal</label><input id="locCP" class="form-control form-control-sm" maxlength="20"></div>
-          <div class="col-md-2"><button class="btn btn-primary btn-sm w-100" onclick="guardarCiudadCatalogo()"><i class="bi bi-plus-lg me-1"></i>Agregar</button></div>
-        </div>
-        <div id="ciudadesCatalogoEstado" class="small text-muted mb-2"></div>
-        <div class="table-responsive"><table class="table table-sm align-middle"><thead><tr><th>Código</th><th>Localidad</th><th>Código postal</th></tr></thead><tbody id="ciudadesCatalogoLista"><tr><td colspan="3" class="text-muted">Elegí una provincia</td></tr></tbody></table></div>
-        <hr class="my-3">
-        <h6 class="small fw-semibold">Pastores de la provincia seleccionada</h6>
+        <label class="form-label small" for="locProvincia">Provincia</label>
+        <select id="locProvincia" class="form-select form-select-sm mb-3" onchange="cambiarProvinciaCatalogo()"><option value="">Elegí provincia</option></select>
+        <p class="small text-muted">Elegí una provincia y usá <b>Editar</b> en la fila que quieras corregir. Se conserva el código y las personas vinculadas.</p>
+        <h6 class="small fw-semibold" id="locTitulo">Nueva localidad</h6>
         <div class="row g-2 align-items-end mb-2">
-          <div class="col-md-9"><label class="form-label small">Nuevo pastor</label><input id="catPastorNombre" class="form-control form-control-sm" maxlength="200" placeholder="Nombre del pastor"></div>
-          <div class="col-md-3"><button class="btn btn-outline-primary btn-sm w-100" onclick="guardarPastorCatalogo()"><i class="bi bi-plus-lg me-1"></i>Agregar pastor</button></div>
+          <div class="col-md-6"><label class="form-label small" for="locNombre">Localidad</label><input id="locNombre" class="form-control form-control-sm" maxlength="100" placeholder="Nombre de la ciudad"></div>
+          <div class="col-md-3"><label class="form-label small" for="locCP">Cód. postal</label><input id="locCP" class="form-control form-control-sm" maxlength="20"></div>
+          <div class="col-md-3"><button id="locGuardar" class="btn btn-primary btn-sm w-100" onclick="guardarCiudadCatalogo()">Agregar localidad</button></div>
         </div>
-        <div id="pastoresCatalogoEstado" class="small text-muted mb-2"></div>
-        <div class="table-responsive"><table class="table table-sm align-middle"><thead><tr><th>Código</th><th>Pastor</th></tr></thead><tbody id="pastoresCatalogoLista"><tr><td colspan="2" class="text-muted">Elegí una provincia</td></tr></tbody></table></div>
+        <button id="locCancelar" class="btn btn-link btn-sm px-0 mb-2" style="display:none" onclick="cancelarEdicionCiudad()">Cancelar edición</button>
+        <div id="ciudadesCatalogoEstado" class="small text-muted mb-2" role="status"></div>
+        <div class="table-responsive" style="max-height:230px"><table class="table table-sm align-middle"><thead><tr><th>Código</th><th>Localidad</th><th>Código postal</th><th>Acciones</th></tr></thead><tbody id="ciudadesCatalogoLista"><tr><td colspan="4" class="text-muted">Elegí una provincia</td></tr></tbody></table></div>
+        <hr class="my-3">
+        <h6 class="small fw-semibold" id="catPastorTitulo">Nuevo pastor</h6>
+        <div class="row g-2 align-items-end mb-2">
+          <div class="col-md-9"><label class="form-label small" for="catPastorNombre">Pastor</label><input id="catPastorNombre" class="form-control form-control-sm" maxlength="200" placeholder="Nombre del pastor"></div>
+          <div class="col-md-3"><button id="catPastorGuardar" class="btn btn-primary btn-sm w-100" onclick="guardarPastorCatalogo()">Agregar pastor</button></div>
+        </div>
+        <button id="catPastorCancelar" class="btn btn-link btn-sm px-0 mb-2" style="display:none" onclick="cancelarEdicionPastor()">Cancelar edición</button>
+        <div id="pastoresCatalogoEstado" class="small text-muted mb-2" role="status"></div>
+        <div class="table-responsive" style="max-height:230px"><table class="table table-sm align-middle"><thead><tr><th>Código</th><th>Pastor</th><th>Acciones</th></tr></thead><tbody id="pastoresCatalogoLista"><tr><td colspan="3" class="text-muted">Elegí una provincia</td></tr></tbody></table></div>
       </div>
       <div class="modal-footer py-1"><button class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cerrar</button></div>
     </div>
@@ -405,44 +410,104 @@ function llenarCombos(){
   q("e_ministerio").innerHTML=h;
 }
 function htmlEsc(s){return String(s==null?"":s).replace(/[&<>\"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];});}
+var catalogoCiudades=[],catalogoPastores=[],catalogoSeq=0,catalogoGuardando=false;
+var ciudadEdicion=0,pastorEdicion=0;
 function abrirCatalogoCiudades(){
   bootstrap.Modal.getOrCreateInstance(q("ciudadesModal")).show();
-  if(!q("locProvincia").options.length)cargarProvincias();
+  if(q("locProvincia").options.length<2)cargarProvincias();
   if(q("locProvincia").value)cargarCatalogoCiudades();
 }
-function cargarCatalogoCiudades(){
-  var provincia=q("locProvincia").value;
-  var body=q("ciudadesCatalogoLista"), past=q("pastoresCatalogoLista");
+function cancelarEdicionCiudad(){
+  if(catalogoGuardando)return;
+  ciudadEdicion=0;q("locNombre").value="";q("locCP").value="";
+  q("locTitulo").textContent="Nueva localidad";q("locGuardar").textContent="Agregar localidad";q("locCancelar").style.display="none";
+}
+function cancelarEdicionPastor(){
+  if(catalogoGuardando)return;
+  pastorEdicion=0;q("catPastorNombre").value="";
+  q("catPastorTitulo").textContent="Nuevo pastor";q("catPastorGuardar").textContent="Agregar pastor";q("catPastorCancelar").style.display="none";
+}
+function cambiarProvinciaCatalogo(){
+  if(catalogoGuardando)return;
+  cancelarEdicionCiudad();cancelarEdicionPastor();
   q("ciudadesCatalogoEstado").textContent="";q("pastoresCatalogoEstado").textContent="";
-  if(!provincia){body.innerHTML="<tr><td colspan='3' class='text-muted'>Elegí una provincia</td></tr>";past.innerHTML="<tr><td colspan='2' class='text-muted'>Elegí una provincia</td></tr>";return;}
-  body.innerHTML="<tr><td colspan='3' class='text-muted'>Cargando localidades…</td></tr>";
-  api("/provincias/"+encodeURIComponent(provincia)+"/ciudades").then(function(list){
-    body.innerHTML=list&&list.length?list.map(function(c){return "<tr><td>"+htmlEsc(c.id_ciudad)+"</td><td>"+htmlEsc(c.nombre)+"</td><td>"+htmlEsc(c.codigo_postal||"")+"</td></tr>";}).join(""):"<tr><td colspan='3' class='text-muted'>No hay localidades cargadas para esta provincia</td></tr>";
-    past.innerHTML="<tr><td colspan='2' class='text-muted'>Cargando pastores…</td></tr>";
-    return api("/provincias/"+encodeURIComponent(provincia)+"/pastores");
-  }).then(function(list){
-    if(!list)return;
-    past.innerHTML=list.length?list.map(function(p){return "<tr><td>"+htmlEsc(p.id_pastor)+"</td><td>"+htmlEsc(p.nombre)+"</td></tr>";}).join(""):"<tr><td colspan='2' class='text-muted'>No hay pastores cargados para esta provincia</td></tr>";
-  }).catch(function(e){q("ciudadesCatalogoEstado").textContent=e.message;});
+  return cargarCatalogoCiudades();
 }
-function guardarCiudadCatalogo(){
-  var idProv=parseInt(q("locProvincia").value,10)||0;
-  var nombre=q("locNombre").value.trim();
-  if(!idProv){alert("Elegí la provincia");return;}
-  if(!nombre){alert("Ingresá el nombre de la localidad");return;}
-  api("/ciudades",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({id_provincia:idProv,nombre:nombre,codigo_postal:q("locCP").value.trim()})})
-    .then(function(r){if(r&&r.error){q("ciudadesCatalogoEstado").textContent=r.error;return;}q("locNombre").value="";q("locCP").value="";q("ciudadesCatalogoEstado").textContent="Localidad agregada";cargarCatalogoCiudades();})
-    .catch(function(e){q("ciudadesCatalogoEstado").textContent=e.message;});
+function editarCiudadCatalogo(id){
+  if(catalogoGuardando)return;
+  var c=catalogoCiudades.find(function(x){return Number(x.id_ciudad)===Number(id);});if(!c)return;
+  ciudadEdicion=Number(c.id_ciudad);q("locNombre").value=c.nombre||"";q("locCP").value=c.codigo_postal||"";
+  q("locTitulo").textContent="Editar localidad · código "+ciudadEdicion;
+  q("locGuardar").textContent="Guardar cambios";q("locCancelar").style.display="";q("ciudadesCatalogoEstado").textContent="";
+  q("locNombre").focus();
 }
-
-function guardarPastorCatalogo(){
+function editarPastorCatalogo(id){
+  if(catalogoGuardando)return;
+  var p=catalogoPastores.find(function(x){return Number(x.id_pastor)===Number(id);});if(!p)return;
+  pastorEdicion=Number(p.id_pastor);q("catPastorNombre").value=p.nombre||"";
+  q("catPastorTitulo").textContent="Editar pastor · código "+pastorEdicion;
+  q("catPastorGuardar").textContent="Guardar cambios";q("catPastorCancelar").style.display="";q("pastoresCatalogoEstado").textContent="";
+  q("catPastorNombre").focus();
+}
+function cargarCatalogoCiudades(){
+  var provincia=q("locProvincia").value,seq=++catalogoSeq;
+  var body=q("ciudadesCatalogoLista"),past=q("pastoresCatalogoLista");
+  catalogoCiudades=[];catalogoPastores=[];
+  if(!provincia){body.innerHTML="<tr><td colspan='4' class='text-muted'>Elegí una provincia</td></tr>";past.innerHTML="<tr><td colspan='3' class='text-muted'>Elegí una provincia</td></tr>";return Promise.resolve();}
+  body.innerHTML="<tr><td colspan='4' class='text-muted'>Cargando localidades…</td></tr>";
+  past.innerHTML="<tr><td colspan='3' class='text-muted'>Cargando pastores…</td></tr>";
+  return api("/provincias/"+encodeURIComponent(provincia)+"/ciudades").then(function(list){
+    if(seq!==catalogoSeq)return;
+    if(!Array.isArray(list))throw new Error("Respuesta de localidades no válida");
+    catalogoCiudades=list;
+    body.innerHTML=list.length?list.map(function(c){var id=parseInt(c.id_ciudad,10)||0;return "<tr><td>"+id+"</td><td>"+htmlEsc(c.nombre)+"</td><td>"+htmlEsc(c.codigo_postal||"")+"</td><td><button class='btn btn-outline-primary btn-sm' onclick='editarCiudadCatalogo("+id+")' aria-label='Editar localidad "+htmlEsc(c.nombre)+"'><i class='bi bi-pencil me-1'></i>Editar</button></td></tr>";}).join(""):"<tr><td colspan='4' class='text-muted'>No hay localidades cargadas para esta provincia</td></tr>";
+  }).catch(function(e){if(seq===catalogoSeq){body.innerHTML="<tr><td colspan='4' class='text-danger'>No se pudieron cargar las localidades</td></tr>";q("ciudadesCatalogoEstado").textContent=e.message;}})
+  .then(function(){
+    if(seq!==catalogoSeq)return;
+    return api("/provincias/"+encodeURIComponent(provincia)+"/pastores").then(function(list){
+      if(seq!==catalogoSeq)return;
+      if(!Array.isArray(list))throw new Error("Respuesta de pastores no válida");
+      catalogoPastores=list;
+      past.innerHTML=list.length?list.map(function(p){var id=parseInt(p.id_pastor,10)||0;return "<tr><td>"+id+"</td><td>"+htmlEsc(p.nombre)+"</td><td><button class='btn btn-outline-primary btn-sm' onclick='editarPastorCatalogo("+id+")' aria-label='Editar pastor "+htmlEsc(p.nombre)+"'><i class='bi bi-pencil me-1'></i>Editar</button></td></tr>";}).join(""):"<tr><td colspan='3' class='text-muted'>No hay pastores cargados para esta provincia</td></tr>";
+    }).catch(function(e){if(seq===catalogoSeq){past.innerHTML="<tr><td colspan='3' class='text-danger'>No se pudieron cargar los pastores</td></tr>";q("pastoresCatalogoEstado").textContent=e.message;}});
+  });
+}
+function bloquearCatalogo(bloquear){
+  catalogoGuardando=bloquear;
+  q("ciudadesModal").querySelectorAll("input,select,button:not([data-bs-dismiss])").forEach(function(el){el.disabled=bloquear;});
+}
+function guardarCiudadCatalogo(){return guardarCatalogo("ciudad");}
+function guardarPastorCatalogo(){return guardarCatalogo("pastor");}
+function guardarCatalogo(tipo){
+  if(catalogoGuardando)return;
+  var ciudad=tipo==="ciudad",id=ciudad?ciudadEdicion:pastorEdicion;
+  var estado=q(ciudad?"ciudadesCatalogoEstado":"pastoresCatalogoEstado");
   var idProv=parseInt(q("locProvincia").value,10)||0;
-  var nombre=q("catPastorNombre").value.trim();
-  if(!idProv){alert("Elegí la provincia");return;}
-  if(!nombre){alert("Ingresá el nombre del pastor");return;}
-  api("/pastores",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({id_provincia:idProv,nombre:nombre})})
-    .then(function(r){if(r&&r.error){q("pastoresCatalogoEstado").textContent=r.error;return;}q("catPastorNombre").value="";q("pastoresCatalogoEstado").textContent="Pastor agregado";cargarCatalogoCiudades();})
-    .catch(function(e){q("pastoresCatalogoEstado").textContent=e.message;});
+  var nombre=q(ciudad?"locNombre":"catPastorNombre").value.trim();
+  if(!idProv){estado.textContent="Elegí la provincia";return;}
+  if(!nombre){estado.textContent=ciudad?"Ingresá el nombre de la localidad":"Ingresá el nombre del pastor";return;}
+  if(nombre.length>(ciudad?100:200)){estado.textContent="El nombre es demasiado largo";return;}
+  var data={id_provincia:idProv,nombre:nombre};
+  if(ciudad)data.codigo_postal=q("locCP").value.trim();
+  if(ciudad&&data.codigo_postal.length>20){estado.textContent="El código postal es demasiado largo";return;}
+  var ruta=ciudad?"/ciudades":"/pastores";
+  ++catalogoSeq;bloquearCatalogo(true);estado.textContent="Guardando…";
+  return api(ruta+(id?"/"+id:""),{method:id?"PUT":"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(data)})
+    .then(function(r){
+      if(r&&r.error)throw new Error(r.error);
+      bloquearCatalogo(false);
+      if(ciudad)cancelarEdicionCiudad();else cancelarEdicionPastor();
+      estado.textContent=ciudad?(id?"Localidad actualizada":"Localidad agregada"):(id?"Pastor actualizado":"Pastor agregado");
+      if(id&&cur&&Number(cur.id_provincia)===idProv){
+        if(ciudad&&Number(cur.id_ciudad)===id)cur.localidad=nombre;
+        if(!ciudad&&Number(cur.id_pastor)===id)cur.pastor=nombre;
+        if(id)mostrarPersona(cur);
+      }
+      return cargarCatalogoCiudades();
+    }).catch(function(e){
+      bloquearCatalogo(false);
+      estado.textContent="No se guardaron los cambios: "+e.message;
+    });
 }
 
 function setSelectValor(id, valor){
